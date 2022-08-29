@@ -1,6 +1,8 @@
-name: TCCL
+name: tc
 channels:
   - defaults
+  - conda-forge
+  - dharpa
 dependencies:
   - google-auth-httplib2
   - pillow
@@ -8,15 +10,8 @@ dependencies:
   - numpy
   - python
   - pandas
-  - gsheetsdb
   - google-api-python-client
-  - streamlit-aggrid
   - streamlit
-  - console_shortcut
   - pip
-  - pip:
-    - anonymizedf==1.0.1
-    - faker==14.1.0
-    - python-decouple==3.6
-    - streamlit-aggrid==0.3.3
+  - streamlit-aggrid
 prefix: C:\Users\clayt\.conda\envs\TCCL

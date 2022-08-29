@@ -7,7 +7,8 @@ import streamlit as st
 import math
 import plotly.express as px
 from google.oauth2 import service_account
-from gsheetsdb import connect
+from googleapiclient.discovery import build
+from googleapiclient.http import HttpRequest
 from re import sub
 from decimal import Decimal
 from st_aggrid import AgGrid
@@ -26,18 +27,33 @@ import utils as utils
 #settings
 SCOPE = "https://www.googleapis.com/auth/spreadsheets"
 sheet_url_income = st.secrets["private_gsheets_url"] + st.secrets["income"]
+sheet_url_givers = st.secrets["private_gsheets_url"] + st.secrets["givers"]
 sheet_url_expenses = st.secrets["private_gsheets_url"] + st.secrets["expenses"]
+sheet_url_costs = st.secrets["private_gsheets_url"] + st.secrets["costs"]
 
-# Create a connection object.
-credentials = service_account.Credentials.from_service_account_info(
+def download_gsheet_values(SHEET_NAME,Cols):
+    # Create a connection object.
+    credentials = service_account.Credentials.from_service_account_info(
     st.secrets["gcp_service_account"],scopes=[SCOPE])
-conn = connect(credentials=credentials)
 
-# Uses st.cache to only rerun when the query changes or after 10 min.
-#@st.cache(ttl=600)
-def run_query(query):
-    df = pd.DataFrame(conn.execute(query, headers=1).fetchall())
-    return df
+    def build_request(http, *args, **kwargs):
+        new_http = google_auth_httplib2.AuthorizedHttp(
+            credentials, http=httplib2.Http()
+        )
+        return HttpRequest(new_http, *args, **kwargs)
+
+    authorized_http = google_auth_httplib2.AuthorizedHttp(credentials, http=httplib2.Http())
+    service = build("sheets","v4",requestBuilder=build_request,http=authorized_http,cache_discovery=False)
+    gsheet_connector = service.spreadsheets()
+
+    values = (gsheet_connector.values()
+        .get(spreadsheetId=st.secrets["sheet_id"],range=f"{SHEET_NAME}!{Cols}")
+        .execute()
+    )
+    df = pd.DataFrame(values["values"])
+    df.columns = df.iloc[0,:]
+    df = df[1:]    
+    return df  
 
 def run():
     if st.experimental_user['email'] is not None:
@@ -50,13 +66,6 @@ def run():
         # Password check used in other pages
         if 'auth' not in st.session_state:
             st.session_state.auth = 'correct'
-
-        #st.sidebar.success("Select a page above")
-
-        # if 'currency_choice' not in st.session_state:
-        #     st.session_state["currency_choice"] = st.sidebar.radio("Choose Currency:",['GBP','USD'],horizontal=True)
-        # else:
-        #     st.session_state["currency_choice"] = st.sidebar.radio("Choose Currency:",['GBP','USD'],horizontal=True,index=['GBP','USD'].index(st.session_state["currency_choice"]))
 
         st.title('TCCL Finances')
 
@@ -74,16 +83,29 @@ def run():
 
             # Download all Bank Data
             if 'income' not in st.session_state:
-                tmp = run_query(f'SELECT * FROM "{sheet_url_income}"')
-                tmp['Transaction_Date'] = pd.to_datetime(tmp['Transaction_Date'])
+                tmp = download_gsheet_values("Income","A:I")
+                tmp['Transaction_Date'] = pd.to_datetime(tmp['Transaction_Date'],format="%d/%m/%Y")
                 tmp['Academic_Year'] = tmp['Transaction_Date'].map(lambda d: d.year + 1 if d.month > 8 else d.year)
                 tmp['Month'] = tmp['Transaction_Date'].dt.to_period('M')
-                tmp['Giftaid_Amount'] = tmp['Credit_Amount'] * tmp['Giftaid']
+                tmp['Giftaid_Amount'] = pd.to_numeric(tmp['Credit_Amount']) * pd.to_numeric(tmp['Giftaid'])
                 st.session_state["income"] = tmp
             if 'expenses' not in st.session_state:
-                tmp2 = run_query(f'SELECT * FROM "{sheet_url_expenses}"')
+                tmp2 = download_gsheet_values("Expenses","A:I")
+                tmp2['Transaction_Date'] = pd.to_datetime(tmp2['Transaction_Date'],format="%d/%m/%Y")
+                tmp2['Debit_Amount'] = pd.to_numeric(tmp2['Debit_Amount'])
                 tmp2['Academic_Year'] = tmp2['Transaction_Date'].map(lambda d: d.year + 1 if d.month > 8 else d.year)
                 st.session_state["expenses"] = tmp2
+            if 'givers' not in st.session_state:
+                givers = download_gsheet_values("Givers","A:F")
+                givers['Giftaid_Amount'] = pd.to_numeric(givers['Amount']) * pd.to_numeric(givers['Giftaid'])
+                givers['Annual_Multiplier'] = [12 if x=='Monthly' else 1 for x in givers['Regularity']]
+                givers['Annual_Amount'] = pd.to_numeric(givers['Annual_Multiplier']) * pd.to_numeric(givers['Giftaid_Amount'])
+                st.session_state["givers"] = givers
+            if 'costs' not in st.session_state:
+                costs = download_gsheet_values("Costs","A:E")
+                costs['Annual_Multiplier'] = [12 if x=='Monthly' else 1 for x in costs['Regularity']]
+                costs['Annual_Amount'] = pd.to_numeric(costs['Annual_Multiplier']) * pd.to_numeric(costs['Amount'])
+                st.session_state["costs"] = costs
 
             t2 = datetime.now()
             time_delta = t2 - t1 
@@ -97,8 +119,6 @@ def run():
         st.markdown("Select **Overall** for a view of the overall financial picture.")
 
         st.markdown("Select **Individuals** to analyze donations from specific individuals.")
-
-        st.markdown("Select **Tier Report** to group donors by size category and attribute overall giving to each category.")
 
         st.markdown("Select **Donor Comparison** to view each individual's change in donations each year.")
 
