@@ -13,30 +13,31 @@ import utils as utils
 
 def individuals_monthly():
 
-    st.session_state["currency_choice"] = st.sidebar.radio("Choose Currency:",['GBP','USD'],horizontal=True,index=['GBP','USD'].index(st.session_state["currency_choice"]))
+#    st.session_state["currency_choice"] = st.sidebar.radio("Choose Currency:",['GBP','USD'],horizontal=True,index=['GBP','USD'].index(st.session_state["currency_choice"]))
 
-    utils.convert_gbpusd(st.session_state["currency_choice"])
+#    utils.convert_gbpusd(st.session_state["currency_choice"])
 
     view = st.radio('Choose View:',['Table','Chart'],horizontal=True)
 
     # Retrive Individual summed data from session_state
-    input_data = st.session_state.data
+    input_data = st.session_state.income
+    input_data['Month'] = pd.to_datetime(input_data['Transaction_Date']).dt.to_period('M')
 
     # Sum by Year - Month
-    df = input_data.groupby(['Renamer','Month']).sum().reset_index()
+    df = input_data.groupby(['Name','Month']).sum().reset_index()
     df['Month'] = df['Month'].astype(str)
     df['Month'] = df['Month'].str.replace('-','')
     df['Month'] = df['Month'].apply(lambda x: datetime.strptime(x,"%Y%m").date())
 
-    output = df.pivot(index='Renamer',columns='Month',values='Credit Amount').reset_index().fillna(0)
+    output = df.pivot(index='Name',columns='Month',values='Giftaid_Amount').reset_index().fillna(0)
 
     # Cast to Wide and flip order: https://www.geeksforgeeks.org/how-to-reverse-the-column-order-of-the-pandas-dataframe/
     values = output.iloc[:,1:]  
-    output = pd.concat([output['Renamer'],values[values.columns[::-1]]],axis=1)
+    output = pd.concat([output['Name'],values[values.columns[::-1]]],axis=1)
 
     # Calculate Total column to rank table by
-    total = df[['Renamer','Credit Amount']].groupby(['Renamer']).sum().reset_index()
-    total.columns = ['Renamer','Total']
+    total = df[['Name','Giftaid_Amount']].groupby(['Name']).sum().reset_index()
+    total.columns = ['Name','Total']
     output.insert(1,"Total",total['Total'])
     output = output.sort_values(by='Total',ascending=False)
 
@@ -44,7 +45,7 @@ def individuals_monthly():
 
     if view == 'Table':
 
-        utils.AgGrid_default(output,output.columns[output.columns.isin(['Renamer'])==False],['Renamer','Total'])
+        utils.AgGrid_default(output,output.columns[output.columns.isin(['Name'])==False],['Name','Total'])
 
         # Possible future To-Do: load chart from interactive chart
         # Example: https://share.streamlit.io/pablocfonseca/streamlit-aggrid/main/examples/example.py
@@ -52,16 +53,16 @@ def individuals_monthly():
     else:
    
         # Multiselect Donors: https://docs.streamlit.io/library/api-reference/widgets/st.multiselect
-        Donors = st.multiselect('Select Donors:',output['Renamer'].tolist(),output['Renamer'].tolist()[0:3])
+        Donors = st.multiselect('Select Donors:',output['Name'].tolist(),output['Name'].tolist()[0:3])
 
         # Slider select daterange
         date_range = st.date_input("Date Range:",value=[datetime.strptime('20190101',"%Y%m%d").date(),max(df['Month'])],
         min_value=min(df['Month']), 
         max_value=max(df['Month']))
 
-        plot_df = df[(df['Month']>=date_range[0]) & (df['Month']<=date_range[1])].pivot(index='Month',columns='Renamer',values='Credit Amount').fillna(0)
+        plot_df = df[(df['Month']>=date_range[0]) & (df['Month']<=date_range[1])].pivot(index='Month',columns='Name',values='Giftaid_Amount').fillna(0)
 
-        fig = px.bar(plot_df[Donors], facet_row="Renamer", facet_row_spacing=0.02, text_auto='.2s', height=550)
+        fig = px.bar(plot_df[Donors], facet_row="Name", facet_row_spacing=0.02, text_auto='.2s', height=550)
 
         # hide and lock down axes and remove facet/subplot labels
         fig.update_xaxes(autorange="reversed")

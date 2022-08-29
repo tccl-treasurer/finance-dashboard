@@ -25,30 +25,30 @@ import utils as utils
 
 def individuals_annual():
 
-    st.session_state["currency_choice"] = st.sidebar.radio("Choose Currency:",['GBP','USD'],horizontal=True,index=['GBP','USD'].index(st.session_state["currency_choice"]))
+    # st.session_state["currency_choice"] = st.sidebar.radio("Choose Currency:",['GBP','USD'],horizontal=True,index=['GBP','USD'].index(st.session_state["currency_choice"]))
 
-    utils.convert_gbpusd(st.session_state["currency_choice"])
+    # utils.convert_gbpusd(st.session_state["currency_choice"])
 
     view = st.radio('Choose View:',['Table','Chart'],horizontal=True)
 
     # Retrive Individual summed data from session_state
-    input_data = st.session_state.data
+    input_data = st.session_state.income
 
     # Sum by Year
-    df = input_data.groupby(['Renamer','Y']).sum().reset_index()
-    df['Year'] = df['Y'].astype(int)
+    df = input_data.groupby(['Name','Academic_Year']).sum().reset_index()
+    df['Academic_Year'] = df['Academic_Year'].astype(int)
 
-    output = df.pivot(index='Renamer',columns='Year',values='Credit Amount').reset_index().fillna(0)
+    output = df.pivot(index='Name',columns='Academic_Year',values='Giftaid_Amount').reset_index().fillna(0)
 
-    output = utils.reindex_pivot(output,df.Y.unique().tolist())
+    output = utils.reindex_pivot(output,df.Academic_Year.unique().tolist())
 
     # Cast to Wide and flip order: https://www.geeksforgeeks.org/how-to-reverse-the-column-order-of-the-pandas-dataframe/
     #values = output.iloc[:,1:]  
     #output = pd.concat([output['Renamer'],values[values.columns[::-1]]],axis=1)
 
     # Calculate Total column to rank table by
-    total = df[['Renamer','Credit Amount']].groupby(['Renamer']).sum().reset_index()
-    total.columns = ['Renamer','Total']
+    total = df[['Name','Giftaid_Amount']].groupby(['Name']).sum().reset_index()
+    total.columns = ['Name','Total']
     output.insert(1,"Total",total['Total'])
     output = output.sort_values(by='Total',ascending=False)
 
@@ -56,7 +56,7 @@ def individuals_annual():
 
     if view == 'Table':
         
-        utils.AgGrid_default(output,output.columns[output.columns.isin(['Renamer','Y'])==False],['Renamer','Total'])
+        utils.AgGrid_default(output,output.columns[output.columns.isin(['Name','Y'])==False],['Name','Total'])
 
         # Possible future To-Do: load chart from interactive chart
         # Example: https://share.streamlit.io/pablocfonseca/streamlit-aggrid/main/examples/example.py
@@ -64,7 +64,7 @@ def individuals_annual():
     else:
    
         # Multiselect Donors: https://docs.streamlit.io/library/api-reference/widgets/st.multiselect
-        Donors = st.multiselect('Select Donors:',output['Renamer'].tolist(),output['Renamer'].tolist()[0:3])
+        Donors = st.multiselect('Select Donors:',output['Name'].tolist(),output['Name'].tolist()[0:3])
 
         # Slider select daterange
         # date_range = st.date_input("Date Range:",value=[datetime.strptime('20160101',"%Y%m%d").date(),max(df['Year'])],
@@ -72,11 +72,11 @@ def individuals_annual():
         # max_value=max(df['Year']))
 
         # Whole year daterange
-        date_range = st.slider('', min_value=min(df['Year']), max_value=max(df['Year']), value=[min(df['Year']),max(df['Year'])], step=1)
+        date_range = st.slider('', min_value=min(df['Academic_Year']), max_value=max(df['Academic_Year']), value=[min(df['Academic_Year']),max(df['Academic_Year'])], step=1)
 
-        plot_df = df[(df['Year']>=date_range[0]) & (df['Year']<=date_range[1])].pivot(index='Year',columns='Renamer',values='Credit Amount').fillna(0)
+        plot_df = df[(df['Academic_Year']>=date_range[0]) & (df['Academic_Year']<=date_range[1])].pivot(index='Academic_Year',columns='Name',values='Giftaid_Amount').fillna(0)
 
-        fig = px.bar(plot_df[Donors], facet_row="Renamer", facet_row_spacing=0.02, text_auto='.2s', height=550)
+        fig = px.bar(plot_df[Donors], facet_row="Name", facet_row_spacing=0.02, text_auto='.2s', height=550)
 
         # hide and lock down axes and remove facet/subplot labels
         fig.update_xaxes(autorange="reversed")
@@ -87,7 +87,7 @@ def individuals_annual():
         # disable the modebar for such a small plot
         st.plotly_chart(fig,use_container_width=True)
 
-st.set_page_config(page_title="Individuals (Annual)", page_icon="👫",layout='centered')
+st.set_page_config(page_title="Individuals (Annual)", page_icon="👫",layout='wide')
 
 st.title('Individuals Annual')
 

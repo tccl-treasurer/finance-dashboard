@@ -14,31 +14,32 @@ import utils as utils
 
 def dc_page():
 
-    st.session_state["currency_choice"] = st.sidebar.radio("Choose Currency:",['GBP','USD'],horizontal=True,index=['GBP','USD'].index(st.session_state["currency_choice"]))
+    # st.session_state["currency_choice"] = st.sidebar.radio("Choose Currency:",['GBP','USD'],horizontal=True,index=['GBP','USD'].index(st.session_state["currency_choice"]))
 
-    utils.convert_gbpusd(st.session_state["currency_choice"])
+    # utils.convert_gbpusd(st.session_state["currency_choice"])
 
     # Radio for user to choose view
     view = st.radio('Choose View:',['Lollipop','Tables'], horizontal=True)
 
-    DM = st.session_state['TRD']
+    income = st.session_state['income']
+    DM = income.groupby(['Academic_Year','Name'])['Giftaid_Amount'].sum().reset_index()
 
     # User Input Year
-    year_list = DM.Y.unique().tolist()
+    year_list = DM.Academic_Year.unique().tolist()
     year_list.sort()
     select_year = st.selectbox('Select Year',year_list,year_list.index(int(datetime.now().year)))
 
-    DM['Y'] = DM['Y'].astype(int)
-    DM = DM.sort_values(by=['Credit Amount'], ascending=False)
+    DM['Academic_Year'] = DM['Academic_Year'].astype(int)
+    DM = DM.sort_values(by=['Giftaid_Amount'], ascending=False)
 
     # Filter for selected year or year prior to that
-    selected_data = DM[(DM['Y']==select_year) | (DM['Y']==(select_year-1))]
+    selected_data = DM[(DM['Academic_Year']==select_year) | (DM['Academic_Year']==(select_year-1))]
 
     # Sum over all Source Types
-    df = selected_data.groupby(['Renamer','Y']).sum().reset_index()
+    df = selected_data.groupby(['Name','Academic_Year']).sum().reset_index()
 
     # Pivot from long to wide format: https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.pivot.html
-    output = df.pivot(index='Renamer',columns='Y',values='Credit Amount').reset_index().fillna(0)
+    output = df.pivot(index='Name',columns='Academic_Year',values='Giftaid_Amount').reset_index().fillna(0)
 
     # Calculate change
     output['Delta'] = output[select_year] - output[(select_year-1)]
@@ -70,7 +71,7 @@ def dc_page():
 
         # Selected Year Scatter
         fig3.add_trace(go.Scatter(x = syd, 
-                                y = filtered_output['Renamer'],
+                                y = filtered_output['Name'],
                                 mode = 'markers',
                                 marker_color = 'darkblue',
                                 marker_size = 10,
@@ -78,7 +79,7 @@ def dc_page():
         
         # Prior Year Scatter
         fig3.add_trace(go.Scatter(x = sydm1, 
-                                y = filtered_output['Renamer'],
+                                y = filtered_output['Name'],
                                 mode = 'markers',
                                 marker_color = 'darkorange', 
                                 marker_size = 10,
@@ -94,7 +95,7 @@ def dc_page():
                                     line=dict(color='crimson', width = 3))
         
         # Update Layout
-        fig3 = fig3.update_layout(height=400,legend=dict(orientation="h",y=-0.15,x=0.15),margin=dict(t=10,b=10))
+        fig3 = fig3.update_layout(height=600,legend=dict(orientation="h",y=-0.15,x=0.15),margin=dict(t=10,b=10))
         
         st.plotly_chart(fig3,use_containter_width=True)
         
@@ -104,7 +105,7 @@ def dc_page():
         filtered_output.columns = filtered_output.columns.astype(str)
 
         utils.AgGrid_default(filtered_output,
-            filtered_output.columns[filtered_output.columns.isin(['Renamer'])==False],['Renamer'],400)
+            filtered_output.columns[filtered_output.columns.isin(['Name'])==False],['Name'],600)
         
     else:
 
@@ -115,28 +116,28 @@ def dc_page():
             st.subheader(f'New donors in {select_year}')
             tmp = output[(output[select_year]>0) & (output[(select_year-1)]==0)]
             tmp.columns = tmp.columns.astype(str)
-            utils.AgGrid_default(tmp,tmp.columns[tmp.columns.isin(['Renamer'])==False],['Renamer'],400)
+            utils.AgGrid_default(tmp,tmp.columns[tmp.columns.isin(['Name'])==False],['Name'],600)
         
         elif type=='Increased':
         
             st.subheader(f'Increased donors in {select_year}')
             tmp = output[(output['Delta']>0) & (output[(select_year-1)]!=0)]
             tmp.columns = tmp.columns.astype(str)
-            utils.AgGrid_default(tmp,tmp.columns[tmp.columns.isin(['Renamer'])==False],['Renamer'],400)
+            utils.AgGrid_default(tmp,tmp.columns[tmp.columns.isin(['Name'])==False],['Name'],600)
         
         elif type=='Lost':
         
             st.subheader(f'Lost donors in {select_year}')
             tmp = output[(output[select_year]==0) & (output[(select_year-1)]>0)]
             tmp.columns = tmp.columns.astype(str)
-            utils.AgGrid_default(tmp,tmp.columns[tmp.columns.isin(['Renamer'])==False],['Renamer'],400)
+            utils.AgGrid_default(tmp,tmp.columns[tmp.columns.isin(['Name'])==False],['Name'],600)
         
         else:
         
             st.subheader(f'Decreased donors in {select_year}')
             tmp = output[(output['Delta']<0) & (output[(select_year)]!=0)]
             tmp.columns = tmp.columns.astype(str)
-            utils.AgGrid_default(tmp,tmp.columns[tmp.columns.isin(['Renamer'])==False],['Renamer'],400)
+            utils.AgGrid_default(tmp,tmp.columns[tmp.columns.isin(['Name'])==False],['Name'],600)
         
 st.set_page_config(page_title="Donor Comparison", page_icon="📊",layout='centered')
 

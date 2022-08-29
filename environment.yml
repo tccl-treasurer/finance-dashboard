@@ -2,19 +2,18 @@ name: TCCL
 channels:
   - defaults
   - conda-forge
-  - dharpa
 dependencies:
-  - python=3.9.0
+  - python=3.9.12
   - streamlit=1.11.0
   - pillow=9.2.0
-  - pandas-datareader=0.10.0
   - numpy=1.23.1
   - plotly=5.9.0
   - pandas=1.4.3
   - pip=22.1.2
   - google-auth-httplib2=0.1.0
-  - google-api-python-client=2.55.0
-  - streamlit-aggrid=0.2.2.post2
-  - pip:
-    - anonymizedf==1.0.1 #need == for pip
+  - google-api-python-client=2.58.0
+  - gsheetsdb=0.1.9
+  - pip :
+    - anonymizedf==1.0.1
+    - streamlit-aggrid==0.3.3
 prefix: C:\Users\clayt\.conda\envs\

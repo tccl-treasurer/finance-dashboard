@@ -13,88 +13,95 @@ import utils as utils
 
 def overall_page():
 
-    st.session_state["currency_choice"] = st.sidebar.radio("Choose Currency:",['GBP','USD'],horizontal=True,index=['GBP','USD'].index(st.session_state["currency_choice"]))
+    #st.session_state["currency_choice"] = st.sidebar.radio("Choose Currency:",['GBP','USD'],horizontal=True,index=['GBP','USD'].index(st.session_state["currency_choice"]))
 
-    utils.convert_gbpusd(st.session_state["currency_choice"])
+    #utils.convert_gbpusd(st.session_state["currency_choice"])
 
-    page_view = st.radio('Choose View:',['Income & Expenditure','Income by Source Type','Income by Core Vs Project','Expenditure by Source Type'],horizontal=True)
+    page_view = st.radio('Choose View:',['Income & Expenditure','Income by Source Type','Expenditure by Source Type','Expenditure by Reference'],horizontal=True)
 
     # Retrive data from session_state
-    data = st.session_state.data
+    income = st.session_state.income
+    expenses = st.session_state.expenses
 
     if page_view=='Income & Expenditure':
 
-        # Calculate Overall Income and Expenditure by Year         
-        df2 = data[['Y','Credit Amount','Debit Amount']].groupby(['Y']).sum().reset_index()
-        df3 = df2.rename(columns={'Credit Amount':'Income','Debit Amount':'Expenditure'})
-        df3 = pd.melt(df3, id_vars = ['Y'], var_name='Group')
+        #Define Years
+        annual_income = income[['Academic_Year','Giftaid_Amount']].groupby(['Academic_Year']).sum()
+        annual_income = annual_income.rename(columns={'Giftaid_Amount':'Income'})
+
+        annual_expenses = expenses[['Academic_Year','Debit_Amount']].groupby(['Academic_Year']).sum()
+        annual_expenses = annual_expenses.rename(columns={'Debit_Amount':'Expenses'})
+
+        annual_data = annual_income.join(annual_expenses).reset_index()
+        annual_data_melt = pd.melt(annual_data, id_vars = ['Academic_Year'], var_name='Group')
         
         # Plotly bar chart: https://plotly.com/python/bar-charts/
-        fig = px.bar(df3, x="Y", y="value", color='Group', barmode='group', labels={
-                     "value": str(page_view + " (" + st.session_state["currency_choice"] + ")")},height=400)
+        fig = px.bar(annual_data_melt, x="Academic_Year", y="value", color='Group', barmode='group', labels={
+                     "value": "Income / Expenditure (£)"},height=400)
         
         # Legend positioning: https://plotly.com/python/legend/
         fig = fig.update_layout(legend=dict(orientation="h", y=-0.15, x=0.15))
         
         st.plotly_chart(fig, use_container_width=True)
-        utils.AgGrid_default(df2,['Credit Amount','Debit Amount'],'Y')
+        st.dataframe(annual_data)
+        utils.AgGrid_default(annual_data,['Income','Expenses'],'Academic_Year')
 
     elif page_view=='Income by Source Type':
 
         # Calculate Income by Year & Source Type
-        df4 = data[['Y','Credit Amount','Source Type']].groupby(['Y','Source Type']).sum().reset_index()
-        
+        income_type = income[['Academic_Year','Source','Giftaid_Amount']].groupby(['Source','Academic_Year']).sum().reset_index()
+
         # Plotly bar chart: https://plotly.com/python/bar-charts/
-        fig = px.bar(df4, x="Y", y="Credit Amount", color='Source Type', labels={
-                     "Credit Amount": str("Income" + " (" + st.session_state["currency_choice"] + ")")},height=400)
+        fig = px.bar(income_type, x="Academic_Year", y="Giftaid_Amount", color='Source', labels={
+                     "Giftaid_Amount": "Income"},height=400)
         
         # Legend positioning: https://plotly.com/python/legend/
         fig = fig.update_layout(legend=dict(orientation="h", y=-0.15, x=0.15))
 
-        df2 = df4.pivot(index='Source Type',columns='Y',values='Credit Amount').reset_index().fillna(0)
-        df2 = utils.reindex_pivot(df2,df4.Y.unique().tolist())
-        df2.columns = df2.columns.astype(str)
+        income_type_pivot = income_type.pivot(index='Source',columns='Academic_Year',values='Giftaid_Amount').reset_index().fillna(0)
+        income_type_pivot = utils.reindex_pivot(income_type_pivot,income_type.Academic_Year.unique().tolist())
+        income_type_pivot.columns = income_type_pivot.columns.astype(str)
 
         st.plotly_chart(fig, use_container_width=True)
-        utils.AgGrid_default(df2,df2.columns[df2.columns!='Source Type'],['Source Type'])
+        utils.AgGrid_default(income_type_pivot,income_type_pivot.columns[income_type_pivot.columns!='Source'],['Source'])
 
     elif page_view=='Expenditure by Source Type':
 
         # Calculate Income by Year & Source Type
-        df6 = data[['Y','Debit Amount','Source Type']].groupby(['Y','Source Type']).sum().reset_index()
+        expenses_type = expenses[['Academic_Year','Category','Debit_Amount']].groupby(['Category','Academic_Year']).sum().reset_index()
         
         # Plotly bar chart: https://plotly.com/python/bar-charts/
-        fig = px.bar(df6, x="Y", y="Debit Amount", color='Source Type', labels={
-                     "Debit Amount": str("Expenditure" + " (" + st.session_state["currency_choice"] + ")")},height=400)
+        fig = px.bar(expenses_type, x="Academic_Year", y="Debit_Amount", color='Category', labels={
+                     "Debit_Amount": "Expenses"},height=400)
         
         # Legend positioning: https://plotly.com/python/legend/
         fig = fig.update_layout(legend=dict(orientation="h", y=-0.15, x=0.15))
 
-        df2 = df6.pivot(index='Source Type',columns='Y',values='Debit Amount').reset_index().fillna(0)
-        df2 = utils.reindex_pivot(df2,df6.Y.unique().tolist())
-        df2.columns = df2.columns.astype(str)
-        
+        expenses_type_pivot = expenses_type.pivot(index='Category',columns='Academic_Year',values='Debit_Amount').reset_index().fillna(0)
+        expenses_type_pivot = utils.reindex_pivot(expenses_type_pivot,expenses_type.Academic_Year.unique().tolist())
+        expenses_type_pivot.columns = expenses_type_pivot.columns.astype(str)
+
         st.plotly_chart(fig, use_container_width=True)
-        utils.AgGrid_default(df2,df2.columns[df2.columns!='Source Type'],['Source Type'])
+        utils.AgGrid_default(expenses_type_pivot,expenses_type_pivot.columns[expenses_type_pivot.columns!='Category'],['Category'])
 
-    elif page_view=='Income by Core Vs Project':
+    elif page_view=='Expenditure by Reference':
 
-        # Calculate Income by Year & Core/Project
-        df8 = data[['Y','Credit Amount','Core/Project']].groupby(['Y','Core/Project']).sum().reset_index()
+        # Calculate Income by Year & Source Type
+        expenses_type = expenses[['Academic_Year','Reference','Debit_Amount']].groupby(['Reference','Academic_Year']).sum().reset_index()
         
         # Plotly bar chart: https://plotly.com/python/bar-charts/
-        fig = px.bar(df8, x="Y", y="Credit Amount", color='Core/Project',  labels={
-                     "Credit Amount": str("Income" + " (" + st.session_state["currency_choice"] + ")")},height=400)
+        fig = px.bar(expenses_type, x="Academic_Year", y="Debit_Amount", color='Reference', labels={
+                     "Debit_Amount": "Expenses"},height=400)
         
         # Legend positioning: https://plotly.com/python/legend/
         fig = fig.update_layout(legend=dict(orientation="h", y=-0.15, x=0.15))
 
-        df2 = df8.pivot(index='Core/Project',columns='Y',values='Credit Amount').reset_index().fillna(0)
-        df2 = utils.reindex_pivot(df2,df8.Y.unique().tolist())
-        df2.columns = df2.columns.astype(str)
+        expenses_type_pivot = expenses_type.pivot(index='Reference',columns='Academic_Year',values='Debit_Amount').reset_index().fillna(0)
+        expenses_type_pivot = utils.reindex_pivot(expenses_type_pivot,expenses_type.Academic_Year.unique().tolist())
+        expenses_type_pivot.columns = expenses_type_pivot.columns.astype(str)
 
         st.plotly_chart(fig, use_container_width=True)
-        utils.AgGrid_default(df2,df2.columns[df2.columns!='Core/Project'],['Core/Project'])
+        utils.AgGrid_default(expenses_type_pivot,expenses_type_pivot.columns[expenses_type_pivot.columns!='Reference'],['Reference'])
 
 st.set_page_config(page_title="Overall", page_icon="📈",layout='centered')
 
