@@ -13,6 +13,7 @@ dependencies:
   - streamlit-aggrid
   - streamlit
   - console_shortcut
+  - pip
   - pip:
     - anonymizedf==1.0.1
     - faker==14.1.0
