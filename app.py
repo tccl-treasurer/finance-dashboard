@@ -75,7 +75,9 @@ def run():
             # Download all Bank Data
             if 'income' not in st.session_state:
                 tmp = run_query(f'SELECT * FROM "{sheet_url_income}"')
+                tmp['Transaction_Date'] = pd.to_datetime(tmp['Transaction_Date'])
                 tmp['Academic_Year'] = tmp['Transaction_Date'].map(lambda d: d.year + 1 if d.month > 8 else d.year)
+                tmp['Month'] = tmp['Transaction_Date'].dt.to_period('M')
                 tmp['Giftaid_Amount'] = tmp['Credit_Amount'] * tmp['Giftaid']
                 st.session_state["income"] = tmp
             if 'expenses' not in st.session_state:
@@ -86,7 +88,7 @@ def run():
             t2 = datetime.now()
             time_delta = t2 - t1 
 
-        placeholder.success(f'Success! Downloaded and filtered in {round(time_delta.total_seconds(),2)} seconds')
+        placeholder.success(f'Success! Downloaded and filtered in {round(time_delta.total_seconds(),1)} seconds')
 
         #Markdown documentation: https://docs.streamlit.io/library/api-reference/text/st.markdown
 
