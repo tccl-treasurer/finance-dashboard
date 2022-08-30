@@ -16,8 +16,6 @@ from st_aggrid.grid_options_builder import GridOptionsBuilder
 from PIL import Image
 import time
 from datetime import datetime
-from anonymizedf.anonymizedf import anonymize
-#import pandas_datareader as dr
 import sys
 import utils as utils
 
