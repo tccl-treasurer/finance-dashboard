@@ -55,8 +55,6 @@ def download_gsheet_values(SHEET_NAME,Cols):
 
 def run():
 
-    st.write(st.experimental_user['email'])
-
     if st.experimental_user['email'] is not None:
         allow_access = True
     else:
