@@ -50,14 +50,17 @@ def forecast_page():
         
     st.plotly_chart(fig)
 
+
     col3, col4 = st.columns(2)
 
     with col3:
-        st.header('Income')
-        st.dataframe(givers[givers.Recipient.isin(recipients)][['Name','Annual_Amount']].sort_values('Annual_Amount',ascending=False))
+        if st.checkbox('Show Income Breakdown by Name'):
+            #st.header('Income')
+            st.dataframe(givers[givers.Recipient.isin(recipients)][['Name','Annual_Amount']].sort_values('Annual_Amount',ascending=False))
     with col4:
-        st.header('Expenses')
-        st.dataframe(costs[costs.Recipient.isin(recipients)][['Reference','Annual_Amount']].sort_values('Annual_Amount',ascending=False))
+        if st.checkbox('Show Expense Breakdown by Cost'):
+            #st.header('Expenses')
+            st.dataframe(costs[costs.Recipient.isin(recipients)][['Reference','Annual_Amount']].sort_values('Annual_Amount',ascending=False))
 
 st.set_page_config(page_title="Forecast", page_icon="📊",layout='centered')
 
