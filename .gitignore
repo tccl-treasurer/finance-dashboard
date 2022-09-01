@@ -1,4 +1,5 @@
 secrets.toml
 *.pyc
 _pycache_
+*.csv
 utils.cpython-39.pyc

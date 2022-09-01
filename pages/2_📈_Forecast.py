@@ -17,7 +17,7 @@ def forecast_page():
     givers = st.session_state['givers']
     costs = st.session_state['costs']
     
-    recipients = st.multiselect('View Analysis for:',givers.Recipient.unique().tolist(),['General'])
+    recipients = st.multiselect('View Analysis for:',costs.Recipient.unique().tolist(),['General'])
 
     col1, col2 = st.columns(2)
 
