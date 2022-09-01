@@ -22,10 +22,10 @@ def forecast_page():
     col1, col2 = st.columns(2)
 
     with col1:
-        income_group = st.selectbox('Group Income by:',['Source','Recipient','Regularity','Name'])
+        income_group = st.selectbox('Group Income by:',['Source','Recipient','Regularity'])
     
     with col2:
-        expense_group = st.selectbox('Group Expenses by:',['Category','Recipient','Regularity','Reference'])
+        expense_group = st.selectbox('Group Expenses by:',['Category','Recipient','Regularity'])
     
     income = givers[givers.Recipient.isin(recipients)].groupby([income_group])['Annual_Amount'].sum().reset_index()
     income.columns = ['Group','Amount']

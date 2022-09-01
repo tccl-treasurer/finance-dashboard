@@ -17,7 +17,7 @@ def overall_page():
 
     #utils.convert_gbpusd(st.session_state["currency_choice"])
 
-    page_view = st.radio('Choose View:',['Income & Expenditure','Income by Source Type','Income by Regularity','Expenditure by Source Type','Expenditure by Reference'],horizontal=True)
+    page_view = st.radio('Choose View:',['Income & Expenditure','Income by Source Type','Income by Regularity','Expenditure by Source Type'],horizontal=True) #'Expenditure by Reference'
 
     # Retrive data from session_state
     income = st.session_state.income
@@ -43,8 +43,7 @@ def overall_page():
         fig = fig.update_layout(legend=dict(orientation="h", y=-0.15, x=0.15))
         
         st.plotly_chart(fig, use_container_width=True)
-        st.dataframe(annual_data)
-        utils.AgGrid_default(annual_data,['Income','Expenses'],'Academic_Year')
+        utils.AgGrid_default(annual_data,['Income','Expenses'],['Academic_Year'])
 
     elif page_view=='Income by Source Type':
 
@@ -104,24 +103,24 @@ def overall_page():
         st.plotly_chart(fig, use_container_width=True)
         utils.AgGrid_default(expenses_type_pivot,expenses_type_pivot.columns[expenses_type_pivot.columns!='Category'],['Category'])
 
-    elif page_view=='Expenditure by Reference':
+    # elif page_view=='Expenditure by Reference':
 
-        # Calculate Income by Year & Source Type
-        expenses_type = expenses[['Academic_Year','Reference','Debit_Amount']].groupby(['Reference','Academic_Year']).sum().reset_index()
+    #     # Calculate Income by Year & Source Type
+    #     expenses_type = expenses[['Academic_Year','Reference','Debit_Amount']].groupby(['Reference','Academic_Year']).sum().reset_index()
         
-        # Plotly bar chart: https://plotly.com/python/bar-charts/
-        fig = px.bar(expenses_type, x="Academic_Year", y="Debit_Amount", color='Reference', labels={
-                     "Debit_Amount": "Expenses"},height=400)
+    #     # Plotly bar chart: https://plotly.com/python/bar-charts/
+    #     fig = px.bar(expenses_type, x="Academic_Year", y="Debit_Amount", color='Reference', labels={
+    #                  "Debit_Amount": "Expenses"},height=400)
         
-        # Legend positioning: https://plotly.com/python/legend/
-        fig = fig.update_layout(legend=dict(orientation="h", y=-0.15, x=0.15))
+    #     # Legend positioning: https://plotly.com/python/legend/
+    #     fig = fig.update_layout(legend=dict(orientation="h", y=-0.15, x=0.15))
 
-        expenses_type_pivot = expenses_type.pivot(index='Reference',columns='Academic_Year',values='Debit_Amount').reset_index().fillna(0)
-        expenses_type_pivot = utils.reindex_pivot(expenses_type_pivot,expenses_type.Academic_Year.unique().tolist())
-        expenses_type_pivot.columns = expenses_type_pivot.columns.astype(str)
+    #     expenses_type_pivot = expenses_type.pivot(index='Reference',columns='Academic_Year',values='Debit_Amount').reset_index().fillna(0)
+    #     expenses_type_pivot = utils.reindex_pivot(expenses_type_pivot,expenses_type.Academic_Year.unique().tolist())
+    #     expenses_type_pivot.columns = expenses_type_pivot.columns.astype(str)
 
-        st.plotly_chart(fig, use_container_width=True)
-        utils.AgGrid_default(expenses_type_pivot,expenses_type_pivot.columns[expenses_type_pivot.columns!='Reference'],['Reference'])
+    #     st.plotly_chart(fig, use_container_width=True)
+    #     utils.AgGrid_default(expenses_type_pivot,expenses_type_pivot.columns[expenses_type_pivot.columns!='Reference'],['Reference'])
 
 st.set_page_config(page_title="Overall", page_icon="📈",layout='centered')
 
