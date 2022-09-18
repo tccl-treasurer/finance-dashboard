@@ -4,15 +4,12 @@ channels:
   - conda-forge
   - dharpa
 dependencies:
-  - pip
   - pandas
   - streamlit-aggrid
   - google-api-python-client
   - numpy
   - google-auth-httplib2
   - plotly
-  - python
+  - python=3.9
   - streamlit
   - pillow
-  - console_shortcut
-prefix: C:\Users\clayt\.conda\envs\tc
