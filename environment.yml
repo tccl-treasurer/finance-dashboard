@@ -1,6 +1,8 @@
 name: tc
 channels:
   - defaults
+  - conda-forge
+  - dharpa
 dependencies:
   - pip
   - pandas
