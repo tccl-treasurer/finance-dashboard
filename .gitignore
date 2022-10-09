@@ -3,3 +3,4 @@ secrets.toml
 _pycache_
 *.csv
 utils.cpython-39.pyc
+tc.yml

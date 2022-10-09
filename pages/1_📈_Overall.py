@@ -15,13 +15,20 @@ def overall_page():
 
     #st.session_state["currency_choice"] = st.sidebar.radio("Choose Currency:",['GBP','USD'],horizontal=True,index=['GBP','USD'].index(st.session_state["currency_choice"]))
 
-    #utils.convert_gbpusd(st.session_state["currency_choice"])
-
-    page_view = st.radio('Choose View:',['Income & Expenditure','Income by Source Type','Income by Regularity','Expenditure by Source Type'],horizontal=True) #'Expenditure by Reference'
-
     # Retrive data from session_state
     income = st.session_state.income
     expenses = st.session_state.expenses
+
+    date_range = st.date_input('Date Range',[income.Transaction_Date.min(),income.Transaction_Date.max()])
+
+    recipients = st.multiselect('View Analysis for:',income.Recipient.unique().tolist(),['General'])
+
+    #utils.convert_gbpusd(st.session_state["currency_choice"])
+
+    page_view = st.radio('Choose View:',['Income & Expenditure','Income Sources','Income Regularity','Expenditure Sources'],horizontal=True) #'Expenditure by Reference'
+
+    income = income[income.Recipient.isin(recipients)]
+    expenses = expenses[expenses.Recipient.isin(recipients)]
 
     if page_view=='Income & Expenditure':
 
@@ -45,13 +52,13 @@ def overall_page():
         st.plotly_chart(fig, use_container_width=True)
         utils.AgGrid_default(annual_data,['Income','Expenses'],['Academic_Year'])
 
-    elif page_view=='Income by Source Type':
+    elif page_view=='Income Sources':
 
         # Calculate Income by Year & Source Type
         income_type = income[['Academic_Year','Source','Giftaid_Amount']].groupby(['Source','Academic_Year']).sum().reset_index()
 
         # Plotly bar chart: https://plotly.com/python/bar-charts/
-        fig = px.bar(income_type, x="Academic_Year", y="Giftaid_Amount", color='Source', labels={
+        fig = px.bar(income_type.sort_values(['Academic_Year','Source'],ascending=False), x="Academic_Year", y="Giftaid_Amount", color='Source', labels={
                      "Giftaid_Amount": "Income"},height=400)
         
         # Legend positioning: https://plotly.com/python/legend/
@@ -64,27 +71,28 @@ def overall_page():
         st.plotly_chart(fig, use_container_width=True)
         utils.AgGrid_default(income_type_pivot,income_type_pivot.columns[income_type_pivot.columns!='Source'],['Source'])
 
-    elif page_view=='Income by Regularity':
+    elif page_view=='Income Regularity':
 
         # Calculate Income by Year & Source Type
-        income_type = income[['Month','Regularity','Giftaid_Amount']].groupby(['Regularity','Month']).sum().reset_index()
-        income_type['Month'] = income_type['Month'].astype(str)
+        income_type = income[['Academic_Year','Regularity','Giftaid_Amount']].groupby(['Regularity','Academic_Year']).sum().reset_index()
 
         # Plotly bar chart: https://plotly.com/python/bar-charts/
-        fig = px.bar(income_type, x="Month", y="Giftaid_Amount", color='Regularity', labels={
+        fig = px.bar(income_type.sort_values(['Academic_Year','Regularity']), x="Academic_Year", y="Giftaid_Amount", color='Regularity', labels={
                      "Giftaid_Amount": "Income"},height=400)
+
+        income_type['Academic_Year'] = income_type['Academic_Year'].astype(str)
         
         # Legend positioning: https://plotly.com/python/legend/
         fig = fig.update_layout(legend=dict(orientation="h", y=-0.15, x=0.15))
 
-        income_type_pivot = income_type.pivot(index='Regularity',columns='Month',values='Giftaid_Amount').reset_index().fillna(0)
-        income_type_pivot = utils.reindex_pivot(income_type_pivot,income_type.Month.astype(str).unique().tolist())
+        income_type_pivot = income_type.pivot(index='Regularity',columns='Academic_Year',values='Giftaid_Amount').reset_index().fillna(0)
+        #income_type_pivot = utils.reindex_pivot(income_type_pivot,income_type.Academic_Year.astype(str).unique().tolist())
         income_type_pivot.columns = income_type_pivot.columns.astype(str)
 
         st.plotly_chart(fig, use_container_width=True)
         utils.AgGrid_default(income_type_pivot,income_type_pivot.columns[income_type_pivot.columns!='Regularity'],['Regularity'])
 
-    elif page_view=='Expenditure by Source Type':
+    elif page_view=='Expenditure Sources':
 
         # Calculate Income by Year & Source Type
         expenses_type = expenses[['Academic_Year','Category','Debit_Amount']].groupby(['Category','Academic_Year']).sum().reset_index()
