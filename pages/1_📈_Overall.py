@@ -25,7 +25,7 @@ def overall_page():
 
     #utils.convert_gbpusd(st.session_state["currency_choice"])
 
-    page_view = st.radio('Choose View:',['Income & Expenditure','Income Sources','Income Regularity','Expenditure Sources'],horizontal=True) #'Expenditure by Reference'
+    page_view = st.radio('Choose View:',['Income & Expenditure','Income Sources','Income Regularity','Expenditure Sources','Giver Count'],horizontal=True) #'Expenditure by Reference'
 
     income = income[income.Recipient.isin(recipients)]
     expenses = expenses[expenses.Recipient.isin(recipients)]
@@ -129,6 +129,25 @@ def overall_page():
 
     #     st.plotly_chart(fig, use_container_width=True)
     #     utils.AgGrid_default(expenses_type_pivot,expenses_type_pivot.columns[expenses_type_pivot.columns!='Reference'],['Reference'])
+
+    elif page_view=='Giver Count':
+
+        #Define Years
+        tmp = income[['Name','Academic_Year','Source','Giftaid_Amount']].groupby(['Academic_Year','Source','Name']).count().reset_index()
+        tmp = tmp[tmp.Giftaid_Amount>2]
+        giver_count = tmp[['Academic_Year','Source','Name']].groupby(['Academic_Year','Source']).count().reset_index()
+        giver_count.columns = ['Academic_Year','Source','Count']
+        
+        # Plotly bar chart: https://plotly.com/python/bar-charts/
+        fig = px.bar(giver_count, x="Academic_Year", y="Count", color='Source', labels={
+                     "Count": "Number of Givers"},height=400)
+        
+        # Legend positioning: https://plotly.com/python/legend/
+        fig = fig.update_layout(legend=dict(orientation="h", y=-0.15, x=0.15))
+        
+        st.plotly_chart(fig, use_container_width=True)
+        st.write('Counts only 2+ donations per year. Counts each Direct Debit as 1.')
+        utils.AgGrid_default(giver_count)
 
 st.set_page_config(page_title="Overall", page_icon="📈",layout='centered')
 
