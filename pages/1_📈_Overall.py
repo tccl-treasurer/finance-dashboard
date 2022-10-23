@@ -19,18 +19,35 @@ def overall_page():
     income = st.session_state.income
     expenses = st.session_state.expenses
 
-    date_range = st.date_input('Date Range',[income.Transaction_Date.min(),income.Transaction_Date.max()])
+    date_range = pd.to_datetime(st.date_input('Date Range',[income.Transaction_Date.min(),income.Transaction_Date.max()]))
 
     recipients = st.multiselect('View Analysis for:',income.Recipient.unique().tolist(),['General'])
 
     #utils.convert_gbpusd(st.session_state["currency_choice"])
 
-    page_view = st.radio('Choose View:',['Income & Expenditure','Income Sources','Income Regularity','Expenditure Sources','Giver Count'],horizontal=True) #'Expenditure by Reference'
+    page_view = st.radio('Choose View:',['Total','Income Sources','Income Regularity','Expenditure Recipients','Giver Count'],horizontal=True) #'Expenditure by Reference'
 
-    income = income[income.Recipient.isin(recipients)]
-    expenses = expenses[expenses.Recipient.isin(recipients)]
+    if use_payslips:
 
-    if page_view=='Income & Expenditure':
+        expenses = [(expenses.Transaction_Date < pd.to_datetime('2019-01-01',format="%Y-%m-%d")) | (~expenses.Reference.isin(['Malc Salary','Dave Salary','Janet Salary','Natalie Salary','Tax']))]
+        payslip_df = pd.read_csv('Payslips_2019_202209.csv')
+        payslip_df.Date = payslip_df.Date.ffill()
+        payslip_df = payslip_df[~payslip_df['Employee Name'].isin(['Process Date:','Employee\nName'])]
+        payslip_df = payslip_df.iloc[:,:3]
+        #payslip_df['Tr']
+        payslip_df.columns = ['Rec']
+
+        expenses.merge()
+
+    income = income[(income.Recipient.isin(recipients)) & \
+                    (income.Transaction_Date >= date_range[0]) & \
+                    (income.Transaction_Date <= date_range[1])]
+
+    expenses = expenses[expenses.Recipient.isin(recipients) & \
+                       (expenses.Transaction_Date >= date_range[0]) & \
+                       (expenses.Transaction_Date <= date_range[1])] 
+
+    if page_view=='Total':
 
         #Define Years
         annual_income = income[['Academic_Year','Giftaid_Amount']].groupby(['Academic_Year']).sum()
@@ -92,7 +109,7 @@ def overall_page():
         st.plotly_chart(fig, use_container_width=True)
         utils.AgGrid_default(income_type_pivot,income_type_pivot.columns[income_type_pivot.columns!='Regularity'],['Regularity'])
 
-    elif page_view=='Expenditure Sources':
+    elif page_view=='Expenditure Recipients':
 
         # Calculate Income by Year & Source Type
         expenses_type = expenses[['Academic_Year','Category','Debit_Amount']].groupby(['Category','Academic_Year']).sum().reset_index()

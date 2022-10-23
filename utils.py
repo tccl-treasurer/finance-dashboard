@@ -113,3 +113,10 @@ def check_password():
 #     an.fake_names("Renamer")
 #     tmp['Renamer'] = tmp['Fake_Renamer']
 #     st.session_state["data"] = tmp
+
+# Payslip processing
+# Using format of saved file
+# df = pd.read_csv('Payslips_2019_202209.csv')
+# df.Date = df.Date.ffill()
+# df = df[~df['Employee Name'].isin(['Process Date:','Employee\nName'])]
+# df

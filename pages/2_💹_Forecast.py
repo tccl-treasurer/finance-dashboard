@@ -50,7 +50,6 @@ def forecast_page():
         
     st.plotly_chart(fig)
 
-
     col3, col4 = st.columns(2)
 
     with col3:

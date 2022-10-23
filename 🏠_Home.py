@@ -1,4 +1,5 @@
-#from pickle import FALSE
+#%%
+# #from pickle import FALSE
 import google_auth_httplib2
 import httplib2
 import numpy as np
@@ -18,6 +19,8 @@ import time
 from datetime import datetime
 import sys
 import utils as utils
+
+#%%
 
 #Googlesheets data obtained using the methodology below:
 #https://docs.streamlit.io/knowledge-base/tutorials/databases/private-gsheet
@@ -53,7 +56,12 @@ def download_gsheet_values(SHEET_NAME,Cols):
     df = df[1:]    
     return df  
 
+#%%
+
 def run():
+
+    with st.sidebar:
+        use_payslips = st.checkbox('Use Salary/Tax Amounts from Payslips rather than Bank Statements.')
 
     if st.experimental_user['email'] is not None:
         allow_access = True
@@ -140,5 +148,7 @@ def run():
 st.set_page_config(layout='centered')
 
 run()
+
+st.dataframe(st.session_state['income'])
 
 #useless comment to make a commit for backup
