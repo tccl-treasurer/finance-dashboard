@@ -14,6 +14,10 @@ import utils as utils
 
 def forecast_page():
 
+    st.session_state["payslips"] = st.sidebar.radio("Use Payslips:",['Yes','No'],horizontal=True,index=['Yes','No'].index(st.session_state["payslips"]))
+    st.session_state["giftaid_choice"] = st.sidebar.radio("Giftaid Choice:",['Accrual','Cash'],horizontal=True)
+    utils.giftaid_toggle(st.session_state["giftaid_choice"])
+
     givers = st.session_state['givers']
     costs = st.session_state['costs']
     

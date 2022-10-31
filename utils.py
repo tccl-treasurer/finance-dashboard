@@ -66,6 +66,20 @@ def convert_gbpusd(curr):
     except:
         st.session_state["TRD"] = DM[DM['Renamer']!='Gift Aid (HMRC Charities)']
 
+def giftaid_toggle(giftaid_choice): 
+
+    tmp = st.session_state["income"]
+
+    if giftaid_choice=='On-going':
+        tmp['Income_Amount'] = tmp['Giftaid_Amount']
+    elif giftaid_choice=='Lump-sum':
+        tmp['Income_Amount'] = tmp['Credit_Amount']
+
+    tmp['Income_Amount'] = pd.to_numeric(tmp['Income_Amount'])
+
+    st.session_state["income"] = tmp
+
+
 #password check
 #using Option 2 here: https://docs.streamlit.io/knowledge-base/deploy/authentication-without-sso
 def check_password():

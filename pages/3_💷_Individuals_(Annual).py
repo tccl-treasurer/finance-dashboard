@@ -25,9 +25,9 @@ import utils as utils
 
 def individuals_annual():
 
-    # st.session_state["currency_choice"] = st.sidebar.radio("Choose Currency:",['GBP','USD'],horizontal=True,index=['GBP','USD'].index(st.session_state["currency_choice"]))
-
-    # utils.convert_gbpusd(st.session_state["currency_choice"])
+    st.session_state["payslips"] = st.sidebar.radio("Use Payslips:",['Yes','No'],horizontal=True,index=['Yes','No'].index(st.session_state["payslips"]))
+    st.session_state["giftaid_choice"] = st.sidebar.radio("Giftaid Choice:",['Accrual','Cash'],horizontal=True)
+    utils.giftaid_toggle(st.session_state["giftaid_choice"])
 
     view = st.radio('Choose View:',['Table','Chart'],horizontal=True)
 
@@ -38,7 +38,7 @@ def individuals_annual():
     df = input_data.groupby(['Name','Academic_Year']).sum().reset_index()
     df['Academic_Year'] = df['Academic_Year'].astype(int)
 
-    output = df.pivot(index='Name',columns='Academic_Year',values='Giftaid_Amount').reset_index().fillna(0)
+    output = df.pivot(index='Name',columns='Academic_Year',values='Income_Amount').reset_index().fillna(0)
 
     output = utils.reindex_pivot(output,df.Academic_Year.unique().tolist())
 
@@ -47,7 +47,7 @@ def individuals_annual():
     #output = pd.concat([output['Renamer'],values[values.columns[::-1]]],axis=1)
 
     # Calculate Total column to rank table by
-    total = df[['Name','Giftaid_Amount']].groupby(['Name']).sum().reset_index()
+    total = df[['Name','Income_Amount']].groupby(['Name']).sum().reset_index()
     total.columns = ['Name','Total']
     output.insert(1,"Total",total['Total'])
     output = output.sort_values(by='Total',ascending=False)
@@ -74,7 +74,7 @@ def individuals_annual():
         # Whole year daterange
         date_range = st.slider('', min_value=min(df['Academic_Year']), max_value=max(df['Academic_Year']), value=[min(df['Academic_Year']),max(df['Academic_Year'])], step=1)
 
-        plot_df = df[(df['Academic_Year']>=date_range[0]) & (df['Academic_Year']<=date_range[1])].pivot(index='Academic_Year',columns='Name',values='Giftaid_Amount').fillna(0)
+        plot_df = df[(df['Academic_Year']>=date_range[0]) & (df['Academic_Year']<=date_range[1])].pivot(index='Academic_Year',columns='Name',values='Income_Amount').fillna(0)
 
         fig = px.bar(plot_df[Donors], facet_row="Name", facet_row_spacing=0.02, text_auto='.2s', height=550)
 

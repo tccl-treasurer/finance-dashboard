@@ -61,7 +61,18 @@ def download_gsheet_values(SHEET_NAME,Cols):
 def run():
 
     with st.sidebar:
-        use_payslips = st.checkbox('Use Salary/Tax Amounts from Payslips rather than Bank Statements.')
+        payslip_choice = st.radio("Use Payslips:",['Yes','No'],horizontal=True)
+        giftaid_choice = st.radio("Giftaid Choice:",['On-going','Lump-sum'],horizontal=True)
+
+    if 'payslips' not in st.session_state:
+        st.session_state["payslips"] = payslip_choice
+    else:
+        st.session_state["payslips"] = payslip_choice
+
+    if 'giftaid_choice' not in st.session_state:
+        st.session_state["giftaid_choice"] = giftaid_choice
+    else:
+        st.session_state["giftaid_choice"] = giftaid_choice
 
     if st.experimental_user['email'] is not None:
         allow_access = True
@@ -95,6 +106,8 @@ def run():
                 tmp['Academic_Year'] = tmp['Transaction_Date'].map(lambda d: d.year + 1 if d.month > 8 else d.year)
                 tmp['Month'] = tmp['Transaction_Date'].dt.to_period('M')
                 tmp['Giftaid_Amount'] = pd.to_numeric(tmp['Credit_Amount']) * pd.to_numeric(tmp['Giftaid'])
+                tmp['Recipient'] = ['General' if x=='Morgan' else x for x in tmp['Recipient']]
+                tmp = tmp[tmp.Recipient!='House'] #remove house donations
                 st.session_state["income"] = tmp
             if 'expenses' not in st.session_state:
                 tmp2 = download_gsheet_values("Expenses","A:I")
@@ -143,12 +156,12 @@ def run():
 
         placeholder.empty()
 
-        #utils.convert_gbpusd(st.session_state["currency_choice"])
+        utils.giftaid_toggle(st.session_state["giftaid_choice"])
 
 st.set_page_config(layout='centered')
 
 run()
 
-st.dataframe(st.session_state['income'])
+#st.dataframe(st.session_state['income'])
 
 #useless comment to make a commit for backup

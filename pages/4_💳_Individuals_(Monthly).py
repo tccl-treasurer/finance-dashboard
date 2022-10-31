@@ -13,9 +13,9 @@ import utils as utils
 
 def individuals_monthly():
 
-#    st.session_state["currency_choice"] = st.sidebar.radio("Choose Currency:",['GBP','USD'],horizontal=True,index=['GBP','USD'].index(st.session_state["currency_choice"]))
-
-#    utils.convert_gbpusd(st.session_state["currency_choice"])
+    st.session_state["payslips"] = st.sidebar.radio("Use Payslips:",['Yes','No'],horizontal=True,index=['Yes','No'].index(st.session_state["payslips"]))
+    st.session_state["giftaid_choice"] = st.sidebar.radio("Giftaid Choice:",['Accrual','Cash'],horizontal=True)
+    utils.giftaid_toggle(st.session_state["giftaid_choice"])
 
     view = st.radio('Choose View:',['Table','Chart'],horizontal=True)
 
@@ -29,14 +29,14 @@ def individuals_monthly():
     df['Month'] = df['Month'].str.replace('-','')
     df['Month'] = df['Month'].apply(lambda x: datetime.strptime(x,"%Y%m").date())
 
-    output = df.pivot(index='Name',columns='Month',values='Giftaid_Amount').reset_index().fillna(0)
+    output = df.pivot(index='Name',columns='Month',values='Income_Amount').reset_index().fillna(0)
 
     # Cast to Wide and flip order: https://www.geeksforgeeks.org/how-to-reverse-the-column-order-of-the-pandas-dataframe/
     values = output.iloc[:,1:]  
     output = pd.concat([output['Name'],values[values.columns[::-1]]],axis=1)
 
     # Calculate Total column to rank table by
-    total = df[['Name','Giftaid_Amount']].groupby(['Name']).sum().reset_index()
+    total = df[['Name','Income_Amount']].groupby(['Name']).sum().reset_index()
     total.columns = ['Name','Total']
     output.insert(1,"Total",total['Total'])
     output = output.sort_values(by='Total',ascending=False)
@@ -60,7 +60,7 @@ def individuals_monthly():
         min_value=min(df['Month']), 
         max_value=max(df['Month']))
 
-        plot_df = df[(df['Month']>=date_range[0]) & (df['Month']<=date_range[1])].pivot(index='Month',columns='Name',values='Giftaid_Amount').fillna(0)
+        plot_df = df[(df['Month']>=date_range[0]) & (df['Month']<=date_range[1])].pivot(index='Month',columns='Name',values='Income_Amount').fillna(0)
 
         fig = px.bar(plot_df[Donors], facet_row="Name", facet_row_spacing=0.02, text_auto='.2s', height=550)
 

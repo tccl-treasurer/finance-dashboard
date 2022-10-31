@@ -14,15 +14,15 @@ import utils as utils
 
 def dc_page():
 
-    # st.session_state["currency_choice"] = st.sidebar.radio("Choose Currency:",['GBP','USD'],horizontal=True,index=['GBP','USD'].index(st.session_state["currency_choice"]))
-
-    # utils.convert_gbpusd(st.session_state["currency_choice"])
+    st.session_state["payslips"] = st.sidebar.radio("Use Payslips:",['Yes','No'],horizontal=True,index=['Yes','No'].index(st.session_state["payslips"]))
+    st.session_state["giftaid_choice"] = st.sidebar.radio("Giftaid Choice:",['Accrual','Cash'],horizontal=True)
+    utils.giftaid_toggle(st.session_state["giftaid_choice"])
 
     # Radio for user to choose view
     view = st.radio('Choose View:',['Lollipop','Tables'], horizontal=True)
 
     income = st.session_state['income']
-    DM = income.groupby(['Academic_Year','Name'])['Giftaid_Amount'].sum().reset_index()
+    DM = income.groupby(['Academic_Year','Name'])['Income_Amount'].sum().reset_index()
 
     # User Input Year
     year_list = DM.Academic_Year.unique().tolist()
@@ -30,7 +30,7 @@ def dc_page():
     select_year = st.selectbox('Select Year',year_list,year_list.index(int(datetime.now().year)))
 
     DM['Academic_Year'] = DM['Academic_Year'].astype(int)
-    DM = DM.sort_values(by=['Giftaid_Amount'], ascending=False)
+    DM = DM.sort_values(by=['Income_Amount'], ascending=False)
 
     # Filter for selected year or year prior to that
     selected_data = DM[(DM['Academic_Year']==select_year) | (DM['Academic_Year']==(select_year-1))]
@@ -39,7 +39,7 @@ def dc_page():
     df = selected_data.groupby(['Name','Academic_Year']).sum().reset_index()
 
     # Pivot from long to wide format: https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.pivot.html
-    output = df.pivot(index='Name',columns='Academic_Year',values='Giftaid_Amount').reset_index().fillna(0)
+    output = df.pivot(index='Name',columns='Academic_Year',values='Income_Amount').reset_index().fillna(0)
 
     # Calculate change
     output['Delta'] = output[select_year] - output[(select_year-1)]
