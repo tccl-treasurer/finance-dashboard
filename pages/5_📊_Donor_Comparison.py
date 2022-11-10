@@ -139,7 +139,7 @@ def dc_page():
             tmp.columns = tmp.columns.astype(str)
             utils.AgGrid_default(tmp,tmp.columns[tmp.columns.isin(['Name'])==False],['Name'],600)
         
-st.set_page_config(page_title="Donor Comparison", page_icon="📊",layout='centered')
+st.set_page_config(page_title="Donor Comparison", page_icon="📊",layout='wide')
 
 st.title('Donor Comparison')
 

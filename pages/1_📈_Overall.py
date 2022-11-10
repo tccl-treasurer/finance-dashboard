@@ -27,7 +27,8 @@ def overall_page():
 
     #utils.convert_gbpusd(st.session_state["currency_choice"])
 
-    page_view = st.radio('Choose View:',['Total','Income Sources','Income Regularity','Income Recipients','Expenditure Recipients','Giver Count'],horizontal=True) #'Expenditure by Reference'
+    page_view = st.radio('Choose View:',['Total','Income Sources','Income Regularity','Income Recipients', \
+                                         'Expenditure Recipients','Expenditure References','Giver Count'],horizontal=True) #'Expenditure by Reference'
 
     if st.session_state["payslips"]=='Yes':
 
@@ -178,6 +179,27 @@ def overall_page():
         st.plotly_chart(fig, use_container_width=True)
         utils.AgGrid_default(expenses_type_pivot,expenses_type_pivot.columns[expenses_type_pivot.columns!='Category'],['Category'])
 
+    elif page_view=='Expenditure References':
+
+        categories = st.multiselect('View Category:',expenses.Category.unique().tolist(),['Expenses'])
+
+        # Calculate Income by Year & Source Type
+        expenses_type = expenses[expenses.Category.isin(categories)][['Academic_Year','Reference','Debit_Amount']].groupby(['Reference','Academic_Year']).sum().reset_index()
+        
+        # Plotly bar chart: https://plotly.com/python/bar-charts/
+        fig = px.bar(expenses_type, x="Academic_Year", y="Debit_Amount", color='Reference', labels={
+                     "Debit_Amount": "Expenses"},height=400)
+        
+        # Legend positioning: https://plotly.com/python/legend/
+        fig = fig.update_layout(legend=dict(orientation="h", y=-0.15, x=0.15))
+
+        expenses_type_pivot = expenses_type.pivot(index='Reference',columns='Academic_Year',values='Debit_Amount').reset_index().fillna(0)
+        expenses_type_pivot = utils.reindex_pivot(expenses_type_pivot,expenses_type.Academic_Year.unique().tolist())
+        expenses_type_pivot.columns = expenses_type_pivot.columns.astype(str)
+
+        st.plotly_chart(fig, use_container_width=True)
+        utils.AgGrid_default(expenses_type_pivot,expenses_type_pivot.columns[expenses_type_pivot.columns!='Reference'],['Reference'])
+
     # elif page_view=='Expenditure by Reference':
 
     #     # Calculate Income by Year & Source Type
@@ -216,7 +238,7 @@ def overall_page():
         st.write('Counts only 2+ donations per year. Counts each Direct Debit as 1.')
         utils.AgGrid_default(giver_count)
 
-st.set_page_config(page_title="Overall", page_icon="📈",layout='centered')
+st.set_page_config(page_title="Overall", page_icon="📈",layout='wide')
 
 st.title('Overall')
 

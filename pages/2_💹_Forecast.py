@@ -65,7 +65,7 @@ def forecast_page():
             #st.header('Expenses')
             st.dataframe(costs[costs.Recipient.isin(recipients)][['Reference','Category','Annual_Amount']].sort_values('Annual_Amount',ascending=False))
 
-st.set_page_config(page_title="Forecast", page_icon="📊",layout='centered')
+st.set_page_config(page_title="Forecast", page_icon="📊",layout='wide')
 
 st.title('Budget Forecast')
 
