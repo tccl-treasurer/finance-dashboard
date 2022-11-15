@@ -94,10 +94,9 @@ def overall_page():
         # Plotly bar chart: https://plotly.com/python/bar-charts/
         fig = px.bar(annual_data_melt, x="Academic_Year", y="value", color='Group', barmode='group', labels={
                      "value": "Income / Expenditure (£)"},height=400)
-        
-        # Legend positioning: https://plotly.com/python/legend/
-        fig = fig.update_layout(legend=dict(orientation="h", y=-0.15, x=0.15))
-        
+
+        fig = utils.format_plotly(fig)
+
         st.plotly_chart(fig, use_container_width=True)
         utils.AgGrid_default(annual_data,['Income','Expenses','Delta'],['Academic_Year'])
 
@@ -109,9 +108,8 @@ def overall_page():
         # Plotly bar chart: https://plotly.com/python/bar-charts/
         fig = px.bar(income_type.sort_values(['Academic_Year','Source'],ascending=False), x="Academic_Year", y="Income_Amount", color='Source', labels={
                      "Income_Amount": "Income"},height=400)
-        
-        # Legend positioning: https://plotly.com/python/legend/
-        fig = fig.update_layout(legend=dict(orientation="h", y=-0.15, x=0.15))
+
+        fig = utils.format_plotly(fig)
 
         income_type_pivot = income_type.pivot(index='Source',columns='Academic_Year',values='Income_Amount').reset_index().fillna(0)
         income_type_pivot = utils.reindex_pivot(income_type_pivot,income_type.Academic_Year.unique().tolist())
@@ -130,9 +128,8 @@ def overall_page():
                      "Income_Amount": "Income"},height=400)
 
         income_type['Academic_Year'] = income_type['Academic_Year'].astype(str)
-        
-        # Legend positioning: https://plotly.com/python/legend/
-        fig = fig.update_layout(legend=dict(orientation="h", y=-0.15, x=0.15))
+
+        fig = utils.format_plotly(fig)
 
         income_type_pivot = income_type.pivot(index='Regularity',columns='Academic_Year',values='Income_Amount').reset_index().fillna(0)
         #income_type_pivot = utils.reindex_pivot(income_type_pivot,income_type.Academic_Year.astype(str).unique().tolist())
@@ -150,8 +147,7 @@ def overall_page():
         fig = px.bar(income_type, x="Academic_Year", y="Income_Amount", color='Recipient', labels={
                      "Income_Amount": "Income"},height=400)
         
-        # Legend positioning: https://plotly.com/python/legend/
-        fig = fig.update_layout(legend=dict(orientation="h", y=-0.15, x=0.15))
+        fig = utils.format_plotly(fig,x=0.25)
 
         income_type_pivot = income_type.pivot(index='Recipient',columns='Academic_Year',values='Income_Amount').reset_index().fillna(0)
         income_type_pivot = utils.reindex_pivot(income_type_pivot,income_type.Academic_Year.unique().tolist())
@@ -169,8 +165,7 @@ def overall_page():
         fig = px.bar(expenses_type, x="Academic_Year", y="Debit_Amount", color='Category', labels={
                      "Debit_Amount": "Expenses"},height=400)
         
-        # Legend positioning: https://plotly.com/python/legend/
-        fig = fig.update_layout(legend=dict(orientation="h", y=-0.15, x=0.15))
+        fig = utils.format_plotly(fig,x=0.2)
 
         expenses_type_pivot = expenses_type.pivot(index='Category',columns='Academic_Year',values='Debit_Amount').reset_index().fillna(0)
         expenses_type_pivot = utils.reindex_pivot(expenses_type_pivot,expenses_type.Academic_Year.unique().tolist())
@@ -190,8 +185,7 @@ def overall_page():
         fig = px.bar(expenses_type, x="Academic_Year", y="Debit_Amount", color='Reference', labels={
                      "Debit_Amount": "Expenses"},height=400)
         
-        # Legend positioning: https://plotly.com/python/legend/
-        fig = fig.update_layout(legend=dict(orientation="h", y=-0.15, x=0.15))
+        fig = utils.format_plotly(fig)
 
         expenses_type_pivot = expenses_type.pivot(index='Reference',columns='Academic_Year',values='Debit_Amount').reset_index().fillna(0)
         expenses_type_pivot = utils.reindex_pivot(expenses_type_pivot,expenses_type.Academic_Year.unique().tolist())
@@ -231,8 +225,7 @@ def overall_page():
         fig = px.bar(giver_count, x="Academic_Year", y="Count", color='Source', labels={
                      "Count": "Number of Givers"},height=400)
         
-        # Legend positioning: https://plotly.com/python/legend/
-        fig = fig.update_layout(legend=dict(orientation="h", y=-0.15, x=0.15))
+        fig = utils.format_plotly(fig)
         
         st.plotly_chart(fig, use_container_width=True)
         st.write('Counts only 2+ donations per year. Counts each Direct Debit as 1.')

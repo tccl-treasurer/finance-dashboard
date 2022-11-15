@@ -79,6 +79,11 @@ def giftaid_toggle(giftaid_choice):
 
     st.session_state["income"] = tmp
 
+def format_plotly(fig,x=1/3,y=-0.2,background='#7c98cb',font_color='white'):
+        fig = fig.update_layout(legend=dict(orientation="h", y=y, x=x))
+        fig = fig.update_layout({'plot_bgcolor': background, 'paper_bgcolor': background,})
+        fig = fig.update_layout(font_color=font_color,title_font_color=font_color,legend_title_font_color=font_color)
+        return fig
 
 #password check
 #using Option 2 here: https://docs.streamlit.io/knowledge-base/deploy/authentication-without-sso
