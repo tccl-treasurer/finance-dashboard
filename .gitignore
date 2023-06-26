@@ -1,6 +1,7 @@
 secrets.toml
 *.pyc
 _pycache_
-*.csv
+Giver Match.csv
 utils.cpython-39.pyc
 tc.yml
+to_do.md

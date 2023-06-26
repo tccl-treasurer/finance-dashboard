@@ -51,7 +51,12 @@ def AgGrid_default(DF,curreny_cols=[],pinned_cols=[],min_height=600):
         
         for col in curreny_cols:
                 # if st.session_state["currency_choice"]=='GBP':
-                gb.configure_column(col, type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"], custom_currency_symbol="£", aggFunc='max')
+                gb.configure_column(col, 
+                                    type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"], 
+                                    #custom_currency_symbol="£", aggFunc='max',
+                                    valueGetter=f"data.{col}.toLocaleString('en-US',{{style: 'currency', currency: 'GBP', maximumFractionDigits:0}});")
+                                    
+                    
                 # elif st.session_state["currency_choice"]=='USD':
                 #     gb.configure_column(col, type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"], custom_currency_symbol="$", aggFunc='max')
         
@@ -80,8 +85,8 @@ def reindex_pivot(df,years):
     return df3
 
 def num_mult(a,b):
-    tmp_a = pd.to_numeric(a,errors='coerce')
-    tmp_b = pd.to_numeric(b,errors='coerce')
+    tmp_a = pd.to_numeric(a,errors='raise')
+    tmp_b = pd.to_numeric(b,errors='raise')
     return tmp_a * tmp_b
 
 # Convert to USD/GBP
@@ -110,12 +115,12 @@ def giftaid_toggle(giftaid_choice):
 
     tmp = st.session_state["income"]
 
-    if giftaid_choice=='On-going':
+    if giftaid_choice=='Accrual':
         tmp['Income_Amount'] = tmp['Giftaid_Amount']
-    elif giftaid_choice=='Lump-sum':
+    elif giftaid_choice=='Cash':
         tmp['Income_Amount'] = tmp['Credit_Amount']
 
-    tmp['Income_Amount'] = pd.to_numeric(tmp['Income_Amount'])
+    #tmp['Income_Amount'] = pd.to_numeric(tmp['Income_Amount'],errors='coerce')
 
     st.session_state["income"] = tmp
 
@@ -159,15 +164,37 @@ def check_password():
         # Password correct.
         return True
 
+def tax_year(d: pd.Series) -> pd.Series:
+    ret = []
+    for i in d:
+        if (i.month > 4) | ((i.month==4) & (i.day>5)):
+            ret.append(i.year+1)
+        else:
+            ret.append(i.year)
+    return ret
+
+def academic_year(d: pd.Series) -> pd.Series:
+    ret = []
+    for i in d:
+        if i.month > 8: 
+            ret.append(i.year+1)
+        else:
+            ret.append(i.year)
+    return ret
+
 def download_xero(df,income_flag):
     #download from google sheet tab
-    xero = download_gsheet_values("Xero","A:N")
+    
+    xero = download_gsheet_values("Xero","A:H")
     xero['Date'] = pd.to_datetime(xero['Date'],format="%d %b %Y")
-    xero['Account Code'] = pd.to_numeric(xero['Account Code'],errors='coerce')
-    xero['Credit'] = pd.to_numeric(xero['Credit'],errors='coerce')
-    xero['Debit'] = pd.to_numeric(xero['Debit'],errors='coerce')
-    xero = xero[xero['Account Code'].isin([600,800])==False]
-    cols = df.columns
+    xero_min_date = xero.Date.min()
+    df = df[df.Transaction_Date<xero_min_date]
+    num_cols = ['Account Code','Credit','Debit']
+    xero[num_cols] = xero[num_cols].apply(lambda x: pd.to_numeric(x.astype(str)
+                                                   .str.replace(',',''), errors='raise'))
+    xero = xero[xero['Account Code'].isin([600,800,960,997])==False]
+    xero = xero[xero['Account Code'].isnull()==False]
+    cols = df.columns.tolist()
 
     if income_flag:
         xero = xero[xero.Credit>0]
@@ -175,7 +202,7 @@ def download_xero(df,income_flag):
         xero['Ref'] = 'xero'
         xero['Source'] = 'xero'
         xero['Regularity'] = ['Regular' if 'Regular' in x else 'One-off' for x in xero.Account]
-        xero['Giftaid'] = [1 if 'non gift aided' in x else 1.25 for x in xero.Account]
+        xero['Giftaid'] = [1.25 if (x==211) | (x==214) else 1 for x in xero['Account Code']]
         return_cols = ['TD','Credit','Date','Ref','Contact','Source','Congregation','Regularity','Giftaid']
         xero = xero[return_cols]
         xero.columns = cols
@@ -206,10 +233,6 @@ def download_xero(df,income_flag):
         cat_df.columns = ['Account Code','Category']
 
         xero = xero[xero.Debit>0]
-        xero['TD'] = 'xero'
-        xero['Ref'] = 'xero'
-        xero['Source'] = 'xero'
-        xero['Regularity'] = ['Regular' if 'Regular' in x else 'One-off' for x in xero.Account]
         xero = pd.merge(xero,cat_df,how='left',on='Account Code')
         return_cols = ['Date','Account','Debit','Account','Category','Congregation']
         xero = xero[return_cols]

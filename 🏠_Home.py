@@ -27,11 +27,13 @@ sheet_url_expenses = st.secrets["private_gsheets_url"] + st.secrets["expenses"]
 sheet_url_costs = st.secrets["private_gsheets_url"] + st.secrets["costs"]
 sheet_url_xero = st.secrets["private_gsheets_url"] + st.secrets["xero"]
 
+#%%
+
 def run():
 
     with st.sidebar:
         payslip_choice = st.radio("Use Payslips:",['Yes','No'],horizontal=True)
-        giftaid_choice = st.radio("Giftaid Choice:",['On-going','Lump-sum'],horizontal=True)
+        giftaid_choice = st.sidebar.radio("Giftaid Choice:",['Accrual','Cash'],horizontal=True)
 
     if 'payslips' not in st.session_state:
         st.session_state["payslips"] = payslip_choice
@@ -71,21 +73,33 @@ def run():
             # Download all Bank Data
             if 'income' not in st.session_state:
                 tmp = utils.download_gsheet_values("Income","A:I")
+                num_cols = ['Credit_Amount','Giftaid']
+                tmp[num_cols] = tmp[num_cols].apply(lambda x: pd.to_numeric(x.astype(str)
+                                                .str.replace(',',''), errors='raise'))
                 tmp['Transaction_Date'] = pd.to_datetime(tmp['Transaction_Date'],format="%d/%m/%Y")
                 tmp = utils.download_xero(tmp,income_flag=True)
-                tmp['Academic_Year'] = tmp['Transaction_Date'].map(lambda d: d.year + 1 if d.month > 8 else d.year)
-                tmp['Month'] = tmp['Transaction_Date'].dt.to_period('M')
+                #tmp['Academic_Year'] = tmp['Transaction_Date'].map(lambda d: d.year + 1 if d.month > 8 else d.year)
+                tmp['Academic_Year'] = utils.academic_year(tmp['Transaction_Date'])
+                tmp['Tax_Year'] = utils.tax_year(tmp['Transaction_Date'])
+                #tmp['Month'] = tmp['Transaction_Date'].dt.to_period('M')
                 tmp['Giftaid_Amount'] = utils.num_mult(tmp['Credit_Amount'],tmp['Giftaid'])
-                tmp['Recipient'] = ['General' if x=='Morgan' else x for x in tmp['Recipient']]
+                tmp['Recipient'] = ['International' if x=='Morgan' else x for x in tmp['Recipient']]
+                tmp['Recipient'] = ['International' if x=='General' else x for x in tmp['Recipient']]
                 #tmp = tmp[tmp.Recipient!='House'] #remove house donations
                 st.session_state["income"] = tmp
 
             if 'expenses' not in st.session_state:
                 tmp2 = utils.download_gsheet_values("Expenses","A:F")
+                num_cols = ['Debit_Amount']
+                tmp2[num_cols] = tmp2[num_cols].apply(lambda x: pd.to_numeric(x.astype(str)
+                                                .str.replace(',',''), errors='raise'))
                 tmp2['Transaction_Date'] = pd.to_datetime(tmp2['Transaction_Date'],format="%d/%m/%Y")
                 tmp2['Debit_Amount'] = pd.to_numeric(tmp2['Debit_Amount'],errors='coerce')
                 tmp2 = utils.download_xero(tmp2,income_flag=False)
-                tmp2['Academic_Year'] = tmp2['Transaction_Date'].map(lambda d: d.year + 1 if d.month > 8 else d.year)
+                #tmp2['Academic_Year'] = tmp2['Transaction_Date'].map(lambda d: d.year + 1 if d.month > 8 else d.year)
+                tmp2['Academic_Year'] = utils.academic_year(tmp2['Transaction_Date'])
+                tmp2['Tax_Year'] = utils.tax_year(tmp2['Transaction_Date'])
+                tmp2['Recipient'] = ['International' if x=='General' else x for x in tmp2['Recipient']]
                 st.session_state["expenses"] = tmp2
                 
             if 'givers' not in st.session_state:
