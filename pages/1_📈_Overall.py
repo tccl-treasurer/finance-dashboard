@@ -36,17 +36,17 @@ def overall_page():
         expenses_tmp = expenses.copy()
         #expenses_tmp['Transaction_Date'] = pd.to_datetime(expenses_tmp['Transaction_Date'],format="%d/%m/%Y")
         removed_total = expenses_tmp[(expenses_tmp.Transaction_Date > pd.to_datetime('2019-01-30',format="%Y-%m-%d")) & \
-             (expenses_tmp.Transaction_Date < pd.to_datetime('2022-10-31',format="%Y-%m-%d")) & \
+             (expenses_tmp.Transaction_Date < pd.to_datetime('2023-09-01',format="%Y-%m-%d")) & \
              (expenses_tmp.Reference.isin(['Malc Salary','Dave Salary','Janet Salary','Natalie Salary','Tax']))].Debit_Amount.sum()
         expenses_tmp = expenses_tmp[(expenses_tmp.Transaction_Date < pd.to_datetime('2019-01-01',format="%Y-%m-%d")) | (~expenses_tmp.Reference.isin(['Malc Salary','Dave Salary','Janet Salary','Natalie Salary','Tax']))]
         expenses_tmp['Year'] = expenses_tmp['Transaction_Date'].dt.year
         removed_total = removed_total #+ expenses_tmp.Debit_Amount.sum()
-        payslip_df = pd.read_csv('pages/Payslips_2019_202209.csv')
+        payslip_df = pd.read_csv('pages/Payslips_2019_202308.csv')
         payslip_df.Date = payslip_df.Date.ffill()
         payslip_df = payslip_df[~payslip_df['Employee Name'].isin(['Process Date:','Employee\r\nName'])]
         payslip_df = payslip_df.iloc[:,:3]
         payslip_df['Transaction_Date'] = pd.to_datetime(payslip_df['Date'],format="%d/%m/%Y")
-        payslip_df = payslip_df[payslip_df.Transaction_Date<'2022-10-01']
+        payslip_df = payslip_df[payslip_df.Transaction_Date<'2023-09-01']
         payslip_df['Transaction_Description'] = "Payslip"
         payslip_df['Debit_Amount'] = pd.to_numeric(payslip_df['Gross Pay pre Sacrifice'],errors='coerce')
         payslip_df['Category'] = 'Salaries'
