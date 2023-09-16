@@ -5,20 +5,8 @@ import math
 import plotly.express as px
 from re import sub
 from decimal import Decimal
-from st_aggrid import AgGrid
-from st_aggrid.grid_options_builder import GridOptionsBuilder
-import time 
-from datetime import datetime
-import utils as utils
-import numpy as np
-import pandas as pd
-import streamlit as st
-import math
-import plotly.express as px
-from re import sub
-from decimal import Decimal
-from st_aggrid import AgGrid
-from st_aggrid.grid_options_builder import GridOptionsBuilder
+# from st_aggrid import AgGrid
+# from st_aggrid.grid_options_builder import GridOptionsBuilder
 import time 
 from datetime import datetime
 import utils as utils
@@ -35,10 +23,10 @@ def individuals_annual():
     input_data = st.session_state.income
 
     # Sum by Year
-    df = input_data.groupby(['Name','Academic_Year']).sum().reset_index()
+    df = input_data.groupby(['Name','Academic_Year'])['Credit_Amount'].sum().reset_index()
     df['Academic_Year'] = df['Academic_Year'].astype(int)
 
-    output = df.pivot(index='Name',columns='Academic_Year',values='Income_Amount').reset_index().fillna(0)
+    output = df.pivot(index='Name',columns='Academic_Year',values='Credit_Amount').reset_index().fillna(0)
 
     output = utils.reindex_pivot(output,df.Academic_Year.unique().tolist())
 
@@ -47,7 +35,7 @@ def individuals_annual():
     #output = pd.concat([output['Renamer'],values[values.columns[::-1]]],axis=1)
 
     # Calculate Total column to rank table by
-    total = df[['Name','Income_Amount']].groupby(['Name']).sum().reset_index()
+    total = df[['Name','Credit_Amount']].groupby(['Name']).sum().reset_index()
     total.columns = ['Name','Total']
     output.insert(1,"Total",total['Total'])
     output = output.sort_values(by='Total',ascending=False)
@@ -55,8 +43,10 @@ def individuals_annual():
     output.columns = output.columns.astype(str)
 
     if view == 'Table':
+
+        st.dataframe(output.style.format(precision=0,thousands=','))
         
-        utils.AgGrid_default(output,output.columns[output.columns.isin(['Name','Y'])==False],['Name','Total'])
+        #utils.AgGrid_default(output,output.columns[output.columns.isin(['Name','Y'])==False],['Name','Total'])
 
         # Possible future To-Do: load chart from interactive chart
         # Example: https://share.streamlit.io/pablocfonseca/streamlit-aggrid/main/examples/example.py
@@ -74,7 +64,7 @@ def individuals_annual():
         # Whole year daterange
         date_range = st.slider('', min_value=min(df['Academic_Year']), max_value=max(df['Academic_Year']), value=[min(df['Academic_Year']),max(df['Academic_Year'])], step=1)
 
-        plot_df = df[(df['Academic_Year']>=date_range[0]) & (df['Academic_Year']<=date_range[1])].pivot(index='Academic_Year',columns='Name',values='Income_Amount').fillna(0)
+        plot_df = df[(df['Academic_Year']>=date_range[0]) & (df['Academic_Year']<=date_range[1])].pivot(index='Academic_Year',columns='Name',values='Credit_Amount').fillna(0)
 
         fig = px.bar(plot_df[Donors], facet_row="Name", facet_row_spacing=0.02, text_auto='.2s', height=550)
 

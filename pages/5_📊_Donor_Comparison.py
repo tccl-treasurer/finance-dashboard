@@ -6,8 +6,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 from re import sub
 from decimal import Decimal
-from st_aggrid import AgGrid
-from st_aggrid.grid_options_builder import GridOptionsBuilder
+# from st_aggrid import AgGrid
+# from st_aggrid.grid_options_builder import GridOptionsBuilder
 import time 
 from datetime import datetime
 import utils as utils
@@ -104,8 +104,10 @@ def dc_page():
         # Convert Column names to string for AgGrid
         filtered_output.columns = filtered_output.columns.astype(str)
 
-        utils.AgGrid_default(filtered_output,
-            filtered_output.columns[filtered_output.columns.isin(['Name'])==False],['Name'],600)
+        st.dataframe(filtered_output.style.format(precision=1,thousands=' '))
+
+        # utils.AgGrid_default(filtered_output,
+        #     filtered_output.columns[filtered_output.columns.isin(['Name'])==False],['Name'],600)
         
     else:
 
@@ -116,28 +118,32 @@ def dc_page():
             st.subheader(f'New donors in {select_year}')
             tmp = output[(output[select_year]>0) & (output[(select_year-1)]==0)]
             tmp.columns = tmp.columns.astype(str)
-            utils.AgGrid_default(tmp,tmp.columns[tmp.columns.isin(['Name'])==False],['Name'],600)
+            #utils.AgGrid_default(tmp,tmp.columns[tmp.columns.isin(['Name'])==False],['Name'],600)
+            st.dataframe(tmp.style.format(precision=1,thousands=' '))
         
         elif type=='Increased':
         
             st.subheader(f'Increased donors in {select_year}')
             tmp = output[(output['Delta']>0) & (output[(select_year-1)]!=0)]
             tmp.columns = tmp.columns.astype(str)
-            utils.AgGrid_default(tmp,tmp.columns[tmp.columns.isin(['Name'])==False],['Name'],600)
+            #utils.AgGrid_default(tmp,tmp.columns[tmp.columns.isin(['Name'])==False],['Name'],600)
+            st.dataframe(tmp.style.format(precision=1,thousands=' '))
         
         elif type=='Lost':
         
             st.subheader(f'Lost donors in {select_year}')
             tmp = output[(output[select_year]==0) & (output[(select_year-1)]>0)]
             tmp.columns = tmp.columns.astype(str)
-            utils.AgGrid_default(tmp,tmp.columns[tmp.columns.isin(['Name'])==False],['Name'],600)
+            #utils.AgGrid_default(tmp,tmp.columns[tmp.columns.isin(['Name'])==False],['Name'],600)
+            st.dataframe(tmp.style.format(precision=1,thousands=' '))
         
         else:
         
             st.subheader(f'Decreased donors in {select_year}')
             tmp = output[(output['Delta']<0) & (output[(select_year)]!=0)]
             tmp.columns = tmp.columns.astype(str)
-            utils.AgGrid_default(tmp,tmp.columns[tmp.columns.isin(['Name'])==False],['Name'],600)
+            #utils.AgGrid_default(tmp,tmp.columns[tmp.columns.isin(['Name'])==False],['Name'],600)
+            st.dataframe(tmp.style.format(precision=1,thousands=' '))
         
 st.set_page_config(page_title="Donor Comparison", page_icon="📊",layout='wide')
 

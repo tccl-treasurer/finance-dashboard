@@ -7,8 +7,8 @@ import math
 import plotly.express as px
 from re import sub
 from decimal import Decimal
-from st_aggrid import AgGrid
-from st_aggrid.grid_options_builder import GridOptionsBuilder
+# from st_aggrid import AgGrid
+# from st_aggrid.grid_options_builder import GridOptionsBuilder
 from PIL import Image
 import time
 from datetime import datetime

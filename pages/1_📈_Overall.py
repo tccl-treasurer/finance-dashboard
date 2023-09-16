@@ -5,8 +5,8 @@ import math
 import plotly.express as px
 from re import sub
 from decimal import Decimal
-from st_aggrid import AgGrid
-from st_aggrid.grid_options_builder import GridOptionsBuilder
+# from st_aggrid import AgGrid
+# from st_aggrid.grid_options_builder import GridOptionsBuilder
 import time 
 from datetime import datetime
 import utils as utils
@@ -22,9 +22,16 @@ def overall_page():
     income = st.session_state.income
     expenses = st.session_state.expenses
 
-    date_range = pd.to_datetime(st.date_input('Date Range',[income.Transaction_Date.min(),datetime(2023,4,5)]))
+    col1 , col2, col3 = st.columns([1,3,1])
 
-    recipients = st.multiselect('View Analysis for:',income.Recipient.unique().tolist(),['International','Associate Pastor','Student'])
+    with col1:
+        date_range = pd.to_datetime(st.date_input('Date Range',[datetime(2017,9,1),income.Transaction_Date.max()]))
+
+    with col2:
+        recipients = st.multiselect('View Analysis for:',income.Recipient.unique().tolist(),['International','Associate Pastor','Student'])
+
+    # with col3:
+    #     year_divider = st.number_input('Year Divider (0=Jan, 1=Feb..)',value=8)
 
     #utils.convert_gbpusd(st.session_state["currency_choice"])
 
@@ -46,7 +53,7 @@ def overall_page():
         payslip_df = payslip_df[~payslip_df['Employee Name'].isin(['Process Date:','Employee\r\nName'])]
         payslip_df = payslip_df.iloc[:,:3]
         payslip_df['Transaction_Date'] = pd.to_datetime(payslip_df['Date'],format="%d/%m/%Y")
-        payslip_df = payslip_df[payslip_df.Transaction_Date<'2023-09-01']
+        #payslip_df = payslip_df[payslip_df.Transaction_Date<'2022-09-01']
         payslip_df['Transaction_Description'] = "Payslip"
         payslip_df['Debit_Amount'] = pd.to_numeric(payslip_df['Gross Pay pre Sacrifice'],errors='coerce')
         payslip_df['Category'] = 'Salaries'
@@ -83,6 +90,9 @@ def overall_page():
                        (expenses.Transaction_Date >= date_range[0]) & \
                        (expenses.Transaction_Date <= date_range[1])] 
 
+    if 'Weekend Away' not in recipients:
+        expenses = expenses[expenses.Category!='Weekend Away']
+
     if st.session_state["year_choice"]=='Tax':
         income['Group_Year'] = income['Tax_Year']
         expenses['Group_Year'] = expenses['Tax_Year']
@@ -105,12 +115,13 @@ def overall_page():
 
         # Plotly bar chart: https://plotly.com/python/bar-charts/
         fig = px.bar(annual_data_melt, x="Group_Year", y="value", color='Group', barmode='group', labels={
-                     "value": "Income / Expenditure (£)"},height=400)
+                     "value": "Income / Expenditure (£)"},
+                     color_discrete_sequence=['#1054da','#ea5e5b','#82c7a5','#FFFFFF'],height=400)
 
         fig = utils.format_plotly(fig)
 
-        st.plotly_chart(fig, use_container_width=True)
-        utils.AgGrid_default(annual_data,['Income','Expenses','Delta'],['Group_Year'])
+        st.plotly_chart(fig, use_container_width=True,theme=None)
+        st.dataframe(annual_data.style.format(precision=0,thousands=' '))
 
     elif page_view=='Income Sources':
 
@@ -119,7 +130,7 @@ def overall_page():
 
         # Plotly bar chart: https://plotly.com/python/bar-charts/
         fig = px.bar(income_type.sort_values(['Group_Year','Source'],ascending=False), x="Group_Year", y="Income_Amount", color='Source', labels={
-                     "Income_Amount": "Income"},height=400)
+                     "Income_Amount": "Income"},color_discrete_sequence=['#1054da','#ea5e5b','#82c7a5','#FFFFFF'],height=400)
 
         fig = utils.format_plotly(fig)
 
@@ -127,8 +138,9 @@ def overall_page():
         income_type_pivot = utils.reindex_pivot(income_type_pivot,income_type.Group_Year.unique().tolist())
         income_type_pivot.columns = income_type_pivot.columns.astype(str)
 
-        st.plotly_chart(fig, use_container_width=True)
-        utils.AgGrid_default(income_type_pivot,income_type_pivot.columns[income_type_pivot.columns!='Source'],['Source'])
+        st.plotly_chart(fig, use_container_width=True,theme=None)
+        st.dataframe(income_type_pivot.style.format(precision=1,thousands=' '))
+        # utils.AgGrid_default(income_type_pivot,income_type_pivot.columns[income_type_pivot.columns!='Source'],['Source'])
 
     elif page_view=='Income Regularity':
 
@@ -137,7 +149,7 @@ def overall_page():
 
         # Plotly bar chart: https://plotly.com/python/bar-charts/
         fig = px.bar(income_type.sort_values(['Group_Year','Regularity']), x="Group_Year", y="Income_Amount", color='Regularity', labels={
-                     "Income_Amount": "Income"},height=400)
+                     "Income_Amount": "Income"},color_discrete_sequence=['#1054da','#ea5e5b','#82c7a5','#FFFFFF'],height=400)
 
         income_type['Group_Year'] = income_type['Group_Year'].astype(str)
 
@@ -147,8 +159,9 @@ def overall_page():
         #income_type_pivot = utils.reindex_pivot(income_type_pivot,income_type.Group_Year.astype(str).unique().tolist())
         income_type_pivot.columns = income_type_pivot.columns.astype(str)
 
-        st.plotly_chart(fig, use_container_width=True)
-        utils.AgGrid_default(income_type_pivot,income_type_pivot.columns[income_type_pivot.columns!='Regularity'],['Regularity'])
+        st.plotly_chart(fig, use_container_width=True,theme=None)
+        st.dataframe(income_type_pivot.style.format(precision=1,thousands=' '))
+        # utils.AgGrid_default(income_type_pivot,income_type_pivot.columns[income_type_pivot.columns!='Source'],['Source'])
 
     elif page_view=='Income Recipients':
 
@@ -157,7 +170,7 @@ def overall_page():
         
         # Plotly bar chart: https://plotly.com/python/bar-charts/
         fig = px.bar(income_type, x="Group_Year", y="Income_Amount", color='Recipient', labels={
-                     "Income_Amount": "Income"},height=400)
+                     "Income_Amount": "Income"},color_discrete_sequence=['#1054da','#ea5e5b','#82c7a5','#FFFFFF'],height=400)
         
         fig = utils.format_plotly(fig,x=0.25)
 
@@ -165,8 +178,9 @@ def overall_page():
         income_type_pivot = utils.reindex_pivot(income_type_pivot,income_type.Group_Year.unique().tolist())
         income_type_pivot.columns = income_type_pivot.columns.astype(str)
 
-        st.plotly_chart(fig, use_container_width=True)
-        utils.AgGrid_default(income_type_pivot,income_type_pivot.columns[income_type_pivot.columns!='Category'],['Recipient'])
+        st.plotly_chart(fig, use_container_width=True,theme=None)
+        st.dataframe(income_type_pivot.style.format(precision=1,thousands=' '))
+        # utils.AgGrid_default(income_type_pivot,income_type_pivot.columns[income_type_pivot.columns!='Source'],['Source'])
 
     elif page_view=='Expenditure Recipients':
 
@@ -175,7 +189,7 @@ def overall_page():
         
         # Plotly bar chart: https://plotly.com/python/bar-charts/
         fig = px.bar(expenses_type, x="Group_Year", y="Debit_Amount", color='Category', labels={
-                     "Debit_Amount": "Expenses"},height=400)
+                     "Debit_Amount": "Expenses"},color_discrete_sequence=['#1054da','#ea5e5b','#82c7a5','#FFFFFF'],height=400)
         
         fig = utils.format_plotly(fig,x=0.2)
 
@@ -183,8 +197,11 @@ def overall_page():
         expenses_type_pivot = utils.reindex_pivot(expenses_type_pivot,expenses_type.Group_Year.unique().tolist())
         expenses_type_pivot.columns = expenses_type_pivot.columns.astype(str)
 
-        st.plotly_chart(fig, use_container_width=True)
-        utils.AgGrid_default(expenses_type_pivot,expenses_type_pivot.columns[expenses_type_pivot.columns!='Category'],['Category'])
+        st.plotly_chart(fig, use_container_width=True,theme=None)
+        st.dataframe(expenses_type_pivot.style.format(precision=1,thousands=' '))
+        #utils.AgGrid_default(expenses_type_pivot,expenses_type_pivot.columns[expenses_type_pivot.columns!='Category'],['Category'])
+
+        st.dataframe(expenses[(expenses.Academic_Year==2023) & (expenses.Category=='Salaries') ].style.format(precision=1,thousands=' '))
 
     elif page_view=='Expenditure References':
 
@@ -195,7 +212,7 @@ def overall_page():
         
         # Plotly bar chart: https://plotly.com/python/bar-charts/
         fig = px.bar(expenses_type, x="Group_Year", y="Debit_Amount", color='Reference', labels={
-                     "Debit_Amount": "Expenses"},height=400)
+                     "Debit_Amount": "Expenses"},color_discrete_sequence=['#1054da','#ea5e5b','#82c7a5','#FFFFFF'],height=400)
         
         fig = utils.format_plotly(fig)
 
@@ -203,8 +220,9 @@ def overall_page():
         expenses_type_pivot = utils.reindex_pivot(expenses_type_pivot,expenses_type.Group_Year.unique().tolist())
         expenses_type_pivot.columns = expenses_type_pivot.columns.astype(str)
 
-        st.plotly_chart(fig, use_container_width=True)
-        utils.AgGrid_default(expenses_type_pivot,expenses_type_pivot.columns[expenses_type_pivot.columns!='Reference'],['Reference'])
+        st.plotly_chart(fig, use_container_width=True,theme=None)
+        st.dataframe(expenses_type_pivot.style.format(precision=1,thousands=' '))
+        #utils.AgGrid_default(expenses_type_pivot,expenses_type_pivot.columns[expenses_type_pivot.columns!='Category'],['Category'])
 
     # elif page_view=='Expenditure by Reference':
 
@@ -222,7 +240,7 @@ def overall_page():
     #     expenses_type_pivot = utils.reindex_pivot(expenses_type_pivot,expenses_type.Group_Year.unique().tolist())
     #     expenses_type_pivot.columns = expenses_type_pivot.columns.astype(str)
 
-    #     st.plotly_chart(fig, use_container_width=True)
+    #     st.plotly_chart(fig, use_container_width=True,theme=None)
     #     utils.AgGrid_default(expenses_type_pivot,expenses_type_pivot.columns[expenses_type_pivot.columns!='Reference'],['Reference'])
 
     elif page_view=='Giver Count':
@@ -233,15 +251,20 @@ def overall_page():
         giver_count = tmp.groupby(['Group_Year','Source'])['Name'].count().reset_index()
         giver_count.columns = ['Group_Year','Source','Count']
         
+        #st.bar_chart(giver_count,x="Group_Year", y="Count",color=['#7c98cb','#ea5e5b'],height=400)
         # Plotly bar chart: https://plotly.com/python/bar-charts/
         fig = px.bar(giver_count, x="Group_Year", y="Count", color='Source', labels={
-                     "Count": "Number of Givers"},height=400)
+                     "Count": "Number of Givers"},height=400
+                     ,color_discrete_sequence=['#1054da','#ea5e5b','#82c7a5','#FFFFFF']
+                     )
         
         fig = utils.format_plotly(fig)
         
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, theme=None)
         st.write('Counts only 2+ donations per year. Counts each Direct Debit as 1.')
-        utils.AgGrid_default(giver_count)
+
+        st.dataframe(giver_count.style.format(precision=1,thousands=' '))
+        # utils.AgGrid_default(giver_count)
 
     #st.dataframe(income[income.Group_Year==2022])
     #st.dataframe(expenses[expenses.Group_Year==2022])

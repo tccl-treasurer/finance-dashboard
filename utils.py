@@ -6,8 +6,8 @@ import math
 import plotly.express as px
 from re import sub
 from decimal import Decimal
-from st_aggrid import AgGrid
-from st_aggrid.grid_options_builder import GridOptionsBuilder
+# from st_aggrid import AgGrid
+# from st_aggrid.grid_options_builder import GridOptionsBuilder
 import time 
 from datetime import datetime
 from google.oauth2 import service_account
@@ -124,10 +124,15 @@ def giftaid_toggle(giftaid_choice):
 
     st.session_state["income"] = tmp
 
-def format_plotly(fig,x=1/3,y=-0.2,background='#7c98cb',font_color='white'):
+def format_plotly(fig,x=0.5,y=-0.2,background='#7c98cb',font_color='white'):
         fig = fig.update_layout(legend=dict(orientation="h", y=y, x=x))
         fig = fig.update_layout({'plot_bgcolor': background, 'paper_bgcolor': background,})
-        fig = fig.update_layout(font_color=font_color,title_font_color=font_color,legend_title_font_color=font_color)
+        fig = fig.update_layout(font_color=font_color,title_font_color=font_color,
+                                legend_title_font_color=font_color)
+        fig = fig.update_xaxes(linecolor='white')
+        fig = fig.update_yaxes(gridcolor='white')
+        #fig = fig.update_traces(marker_colorscale =['#1054da','#ea5e5b'])
+        #fig = fig.update_layout()
         return fig
 
 #password check
@@ -184,7 +189,6 @@ def academic_year(d: pd.Series) -> pd.Series:
 
 def download_xero(df,income_flag):
     #download from google sheet tab
-    
     xero = download_gsheet_values("Xero","A:H")
     xero['Date'] = pd.to_datetime(xero['Date'],format="%d %b %Y")
     xero_min_date = xero.Date.min()
@@ -197,13 +201,18 @@ def download_xero(df,income_flag):
     cols = df.columns.tolist()
 
     if income_flag:
+        givers = download_gsheet_values("Givers","A:F")
         xero = xero[xero.Credit>0]
         xero['TD'] = 'xero'
         xero['Ref'] = 'xero'
-        xero['Source'] = 'xero'
+        xero['Name'] = xero['Name'].str.title()
+        givers['Name'] = givers['Name'].str.title()
+        xero = xero.merge(givers[['Name','Source']],on='Name',how='left')
         xero['Regularity'] = ['Regular' if 'Regular' in x else 'One-off' for x in xero.Account]
         xero['Giftaid'] = [1.25 if (x==211) | (x==214) else 1 for x in xero['Account Code']]
-        return_cols = ['TD','Credit','Date','Ref','Contact','Source','Congregation','Regularity','Giftaid']
+        xero['Giftaid'] = [0 if x=='Hmrc' else y for x, y in zip(xero['Name'],xero['Giftaid'])]
+        xero['Congregation'] = ['Weekend Away' if x==263 else y for x , y in zip(xero['Account Code'],xero['Congregation'])]
+        return_cols = ['TD','Credit','Date','Ref','Name','Source','Congregation','Regularity','Giftaid']
         xero = xero[return_cols]
         xero.columns = cols
         df = pd.concat([df,xero],axis=0)
@@ -216,7 +225,9 @@ def download_xero(df,income_flag):
             433:'Expenses',
             401:'Expenses',
             463:'Expenses',
+            4105:'Expenses',
             4110:'Expenses',
+            4112:'Expenses',
             4114:'Expenses',
             480:'Expenses',
             4102:'Expenses',
@@ -226,7 +237,7 @@ def download_xero(df,income_flag):
             4105:'Weekend Away',
             858:'Salaries',
             4111:'Expenses',
-            477:'Expenses',
+            477:'Salaries',
             493:'Expenses'
         }
         cat_df = pd.DataFrame.from_dict(category_dict,orient='index').reset_index()

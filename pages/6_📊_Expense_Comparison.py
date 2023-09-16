@@ -6,8 +6,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 from re import sub
 from decimal import Decimal
-from st_aggrid import AgGrid
-from st_aggrid.grid_options_builder import GridOptionsBuilder
+# from st_aggrid import AgGrid
+# from st_aggrid.grid_options_builder import GridOptionsBuilder
 import time 
 from datetime import datetime, timedelta
 import utils as utils
@@ -19,7 +19,7 @@ def ec_page():
     utils.giftaid_toggle(st.session_state["giftaid_choice"])
     expenses = st.session_state['expenses']
     
-    recipients = st.multiselect('View Analysis for:',expenses.Recipient.unique().tolist(),['General'])
+    recipients = st.multiselect('View Analysis for:',expenses.Recipient.unique().tolist(),['International'])
     
     DM = expenses[expenses.Recipient.isin(recipients)] \
          .groupby(['Academic_Year','Reference'])['Debit_Amount'].sum().reset_index()
@@ -156,9 +156,10 @@ def ec_page():
         # Convert Column names to string for AgGrid
         filtered_output.columns = filtered_output.columns.astype(str)
 
-        utils.AgGrid_default(filtered_output,
-            filtered_output.columns[filtered_output.columns.isin(['Reference'])==False],['Reference'],400)
-        
+        # utils.AgGrid_default(filtered_output,
+        #     filtered_output.columns[filtered_output.columns.isin(['Reference'])==False],['Reference'],400)
+        st.dataframe(filtered_output.style.format(precision=1,thousands=' '))
+
     else:
 
         type = st.radio("View List of",['New','Increased','Lost','Decreased'], horizontal=True)
@@ -171,7 +172,8 @@ def ec_page():
             else:
                 tmp = output[(output[select_year]>0) & (output[(select_year-1)]==0)]
             tmp.columns = tmp.columns.astype(str)
-            utils.AgGrid_default(tmp,tmp.columns[tmp.columns.isin(['Reference'])==False],['Reference'],400)
+            #utils.AgGrid_default(tmp,tmp.columns[tmp.columns.isin(['Reference'])==False],['Reference'],400)
+            st.dataframe(tmp.style.format(precision=1,thousands=' '))
         
         elif type=='Increased':
         
@@ -181,7 +183,8 @@ def ec_page():
             else:
                 tmp = output[(output['Delta']>0) & (output[(select_year-1)]!=0)]
             tmp.columns = tmp.columns.astype(str)
-            utils.AgGrid_default(tmp,tmp.columns[tmp.columns.isin(['Reference'])==False],['Reference'],400)
+            #utils.AgGrid_default(tmp,tmp.columns[tmp.columns.isin(['Reference'])==False],['Reference'],400)
+            st.dataframe(tmp.style.format(precision=1,thousands=' '))
         
         elif type=='Lost':
         
@@ -191,7 +194,8 @@ def ec_page():
             else:
                 tmp = output[(output[select_year]==0) & (output[(select_year-1)]>0)]
             tmp.columns = tmp.columns.astype(str)
-            utils.AgGrid_default(tmp,tmp.columns[tmp.columns.isin(['Reference'])==False],['Reference'],400)
+            #utils.AgGrid_default(tmp,tmp.columns[tmp.columns.isin(['Reference'])==False],['Reference'],400)
+            st.dataframe(tmp.style.format(precision=1,thousands=' '))
         
         else:
         
@@ -201,7 +205,8 @@ def ec_page():
             else:
                 tmp = output[(output['Delta']<0) & (output[(select_year)]!=0)]
             tmp.columns = tmp.columns.astype(str)
-            utils.AgGrid_default(tmp,tmp.columns[tmp.columns.isin(['Reference'])==False],['Reference'],400)
+            #utils.AgGrid_default(tmp,tmp.columns[tmp.columns.isin(['Reference'])==False],['Reference'],400)
+            st.dataframe(tmp.style.format(precision=1,thousands=' '))
         
 st.set_page_config(page_title="Expense Comparison", page_icon="📊",layout='wide')
 
