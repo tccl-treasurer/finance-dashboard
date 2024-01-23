@@ -81,10 +81,13 @@ def run():
                 #tmp['Academic_Year'] = tmp['Transaction_Date'].map(lambda d: d.year + 1 if d.month > 8 else d.year)
                 tmp['Academic_Year'] = utils.academic_year(tmp['Transaction_Date'])
                 tmp['Tax_Year'] = utils.tax_year(tmp['Transaction_Date'])
+                tmp['Calendar_Year'] = tmp['Transaction_Date'].apply(lambda x: x.year)
                 #tmp['Month'] = tmp['Transaction_Date'].dt.to_period('M')
                 tmp['Giftaid_Amount'] = utils.num_mult(tmp['Credit_Amount'],tmp['Giftaid'])
                 tmp['Recipient'] = ['International' if x=='Morgan' else x for x in tmp['Recipient']]
                 tmp['Recipient'] = ['International' if x=='General' else x for x in tmp['Recipient']]
+                tmp['Source'] = tmp['Source'].fillna('Internal')
+                tmp = tmp.drop_duplicates()
                 #tmp = tmp[tmp.Recipient!='House'] #remove house donations
                 st.session_state["income"] = tmp
 
@@ -99,7 +102,9 @@ def run():
                 #tmp2['Academic_Year'] = tmp2['Transaction_Date'].map(lambda d: d.year + 1 if d.month > 8 else d.year)
                 tmp2['Academic_Year'] = utils.academic_year(tmp2['Transaction_Date'])
                 tmp2['Tax_Year'] = utils.tax_year(tmp2['Transaction_Date'])
+                tmp2['Calendar_Year'] = tmp2['Transaction_Date'].dt.year
                 tmp2['Recipient'] = ['International' if x=='General' else x for x in tmp2['Recipient']]
+                tmp2['Category'] = tmp2['Category'].fillna('Expenses')
                 st.session_state["expenses"] = tmp2
                 
             if 'givers' not in st.session_state:

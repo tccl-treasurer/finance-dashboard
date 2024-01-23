@@ -131,6 +131,8 @@ def format_plotly(fig,x=0.5,y=-0.2,background='#7c98cb',font_color='white'):
                                 legend_title_font_color=font_color)
         fig = fig.update_xaxes(linecolor='white')
         fig = fig.update_yaxes(gridcolor='white')
+        fig.update_traces(textposition='inside',texttemplate = "%{value:,.3s} ")
+        fig.update_layout(uniformtext_minsize=12, uniformtext_mode='hide')
         #fig = fig.update_traces(marker_colorscale =['#1054da','#ea5e5b'])
         #fig = fig.update_layout()
         return fig
@@ -211,7 +213,7 @@ def download_xero(df,income_flag):
         xero['Regularity'] = ['Regular' if 'Regular' in x else 'One-off' for x in xero.Account]
         xero['Giftaid'] = [1.25 if (x==211) | (x==214) else 1 for x in xero['Account Code']]
         xero['Giftaid'] = [0 if x=='Hmrc' else y for x, y in zip(xero['Name'],xero['Giftaid'])]
-        xero['Congregation'] = ['Weekend Away' if x==263 else y for x , y in zip(xero['Account Code'],xero['Congregation'])]
+        xero['TD'] = ['Weekend Away' if x==263 else y for x , y in zip(xero['Account Code'],xero['TD'])]
         return_cols = ['TD','Credit','Date','Ref','Name','Source','Congregation','Regularity','Giftaid']
         xero = xero[return_cols]
         xero.columns = cols
@@ -221,6 +223,7 @@ def download_xero(df,income_flag):
     else:
 
         category_dict = {
+            263:'Expenses',
             430:'Expenses',
             433:'Expenses',
             401:'Expenses',
@@ -234,7 +237,8 @@ def download_xero(df,income_flag):
             470:'Housing',
             4106:'Expenses',
             4120:'Expenses',
-            4105:'Weekend Away',
+            #4105:'Weekend Away',
+            4105:'Expenses',
             858:'Salaries',
             4111:'Expenses',
             477:'Salaries',
