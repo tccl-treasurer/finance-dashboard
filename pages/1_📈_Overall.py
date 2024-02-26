@@ -119,10 +119,10 @@ def overall_page():
 
         # Plotly bar chart: https://plotly.com/python/bar-charts/
         fig = px.bar(annual_data_melt, x="Group_Year", y="value", color='Group', barmode='group', labels={
-                     "value": "Income / Expenditure (£)"},text="value",
+                     "value": "Income / Expenditure (£)","Group_Year":""},text="value",
                      color_discrete_sequence=['#1054da','#ea5e5b','#82c7a5','#FFFFFF'],height=450,width=900)
 
-        fig = utils.format_plotly(fig,x=1/3)
+        fig = utils.format_plotly(fig,x=1/3,y=-0.1)
 
         st.plotly_chart(fig, use_container_width=False,theme=None)
         st.dataframe(annual_data.style.format(precision=0,thousands=' '))
@@ -134,10 +134,10 @@ def overall_page():
 
         # Plotly bar chart: https://plotly.com/python/bar-charts/
         fig = px.bar(income_type.sort_values(['Group_Year','Source'],ascending=False), x="Group_Year", y="Income_Amount", color='Source', labels={
-                     "Income_Amount": "Income"},color_discrete_sequence=['#1054da','#ea5e5b','#82c7a5','#FFFFFF']
+                     "Income_Amount": "Income","Group_Year":""},color_discrete_sequence=['#1054da','#ea5e5b','#82c7a5','#FFFFFF']
                      ,height=450,width=900)
 
-        fig = utils.format_plotly(fig)
+        fig = utils.format_plotly(fig,x=1/3,y=-0.1)
 
         income_type_pivot = income_type.pivot(index='Source',columns='Group_Year',values='Income_Amount').reset_index().fillna(0)
         income_type_pivot = utils.reindex_pivot(income_type_pivot,income_type.Group_Year.unique().tolist())
@@ -145,6 +145,10 @@ def overall_page():
 
         st.plotly_chart(fig, use_container_width=False,theme=None)
         st.dataframe(income_type_pivot.style.format(precision=1,thousands=' '))
+        income_type_name = income.groupby(['Source','Group_Year','Name'])['Income_Amount'].sum().reset_index()
+        income_type_name_pivot = income_type_name.pivot(index=['Name','Source'],columns='Group_Year',values='Income_Amount').reset_index().fillna(0)
+        income_type_name_pivot['Delta'] = income_type_name_pivot.iloc[:,-1] - income_type_name_pivot.iloc[:,-2]
+        st.dataframe(income_type_name_pivot.style.format(precision=1,thousands=' '),use_container_width=True)
         # utils.AgGrid_default(income_type_pivot,income_type_pivot.columns[income_type_pivot.columns!='Source'],['Source'])
 
     elif page_view=='Income Regularity':
@@ -159,7 +163,7 @@ def overall_page():
 
         income_type['Group_Year'] = income_type['Group_Year'].astype(str)
 
-        fig = utils.format_plotly(fig)
+        fig = utils.format_plotly(fig,x=1/3,y=-0.1)
 
         income_type_pivot = income_type.pivot(index='Regularity',columns='Group_Year',values='Income_Amount').reset_index().fillna(0)
         #income_type_pivot = utils.reindex_pivot(income_type_pivot,income_type.Group_Year.astype(str).unique().tolist())
@@ -196,10 +200,10 @@ def overall_page():
         
         # Plotly bar chart: https://plotly.com/python/bar-charts/
         fig = px.bar(expenses_type, x="Group_Year", y="Debit_Amount", color='Category', labels={
-                     "Debit_Amount": "Expenses"},color_discrete_sequence=['#1054da','#ea5e5b','#82c7a5','#FFFFFF']
+                     "Debit_Amount": "Expenses","Group_Year":""},color_discrete_sequence=['#1054da','#ea5e5b','#82c7a5','#FFFFFF']
                      ,height=450,width=900)
         
-        fig = utils.format_plotly(fig,x=0.2)
+        fig = utils.format_plotly(fig,x=0.1,y=-0.1)
 
         expenses_type_pivot = expenses_type.pivot(index='Category',columns='Group_Year',values='Debit_Amount').reset_index().fillna(0)
         expenses_type_pivot = utils.reindex_pivot(expenses_type_pivot,expenses_type.Group_Year.unique().tolist())

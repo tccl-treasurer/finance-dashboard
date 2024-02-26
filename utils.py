@@ -228,7 +228,7 @@ def download_xero(df,income_flag):
             433:'Expenses',
             401:'Expenses',
             463:'Expenses',
-            4105:'Expenses',
+            #4105:'Expenses',
             4110:'Expenses',
             4112:'Expenses',
             4114:'Expenses',
@@ -237,12 +237,13 @@ def download_xero(df,income_flag):
             470:'Housing',
             4106:'Expenses',
             4120:'Expenses',
-            #4105:'Weekend Away',
-            4105:'Expenses',
+            4105:'Weekend Away',
+            #4105:'Expenses',
             858:'Salaries',
             4111:'Expenses',
             477:'Salaries',
-            493:'Expenses'
+            493:'Expenses',
+            4118:'Venue Hire'
         }
         cat_df = pd.DataFrame.from_dict(category_dict,orient='index').reset_index()
         cat_df.columns = ['Account Code','Category']

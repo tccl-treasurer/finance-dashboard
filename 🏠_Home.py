@@ -72,12 +72,14 @@ def run():
 
             # Download all Bank Data
             if 'income' not in st.session_state:
-                tmp = utils.download_gsheet_values("Income","A:I")
+                tmp = utils.download_gsheet_values("Income","A:J")
                 num_cols = ['Credit_Amount','Giftaid']
                 tmp[num_cols] = tmp[num_cols].apply(lambda x: pd.to_numeric(x.astype(str)
                                                 .str.replace(',',''), errors='raise'))
+                tmp = tmp[tmp.Weekend_Away!='1'][tmp.columns[:-1]]
                 tmp['Transaction_Date'] = pd.to_datetime(tmp['Transaction_Date'],format="%d/%m/%Y")
                 tmp = utils.download_xero(tmp,income_flag=True)
+                tmp['Transaction_Date'] = pd.to_datetime(tmp['Transaction_Date'],format="%d/%m/%Y")
                 #tmp['Academic_Year'] = tmp['Transaction_Date'].map(lambda d: d.year + 1 if d.month > 8 else d.year)
                 tmp['Academic_Year'] = utils.academic_year(tmp['Transaction_Date'])
                 tmp['Tax_Year'] = utils.tax_year(tmp['Transaction_Date'])
@@ -89,6 +91,7 @@ def run():
                 tmp['Source'] = tmp['Source'].fillna('Internal')
                 tmp = tmp.drop_duplicates()
                 #tmp = tmp[tmp.Recipient!='House'] #remove house donations
+
                 st.session_state["income"] = tmp
 
             if 'expenses' not in st.session_state:
@@ -105,6 +108,7 @@ def run():
                 tmp2['Calendar_Year'] = tmp2['Transaction_Date'].dt.year
                 tmp2['Recipient'] = ['International' if x=='General' else x for x in tmp2['Recipient']]
                 tmp2['Category'] = tmp2['Category'].fillna('Expenses')
+                tmp2 = tmp2[tmp2.Reference!='WE Away']
                 st.session_state["expenses"] = tmp2
                 
             if 'givers' not in st.session_state:
