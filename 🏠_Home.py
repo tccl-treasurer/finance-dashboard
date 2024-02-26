@@ -1,19 +1,14 @@
 #%%
 # #from pickle import FALSE
-import google_auth_httplib2
-import httplib2
 import numpy as np
 import pandas as pd
 import streamlit as st
 import math
 import plotly.express as px
-from google.oauth2 import service_account
-from googleapiclient.discovery import build
-from googleapiclient.http import HttpRequest
 from re import sub
 from decimal import Decimal
-from st_aggrid import AgGrid
-from st_aggrid.grid_options_builder import GridOptionsBuilder
+# from st_aggrid import AgGrid
+# from st_aggrid.grid_options_builder import GridOptionsBuilder
 from PIL import Image
 import time
 from datetime import datetime
@@ -26,35 +21,11 @@ import utils as utils
 #https://docs.streamlit.io/knowledge-base/tutorials/databases/private-gsheet
 
 #settings
-SCOPE = "https://www.googleapis.com/auth/spreadsheets"
 sheet_url_income = st.secrets["private_gsheets_url"] + st.secrets["income"]
 sheet_url_givers = st.secrets["private_gsheets_url"] + st.secrets["givers"]
 sheet_url_expenses = st.secrets["private_gsheets_url"] + st.secrets["expenses"]
 sheet_url_costs = st.secrets["private_gsheets_url"] + st.secrets["costs"]
-
-def download_gsheet_values(SHEET_NAME,Cols):
-    # Create a connection object.
-    credentials = service_account.Credentials.from_service_account_info(
-    st.secrets["gcp_service_account"],scopes=[SCOPE])
-
-    def build_request(http, *args, **kwargs):
-        new_http = google_auth_httplib2.AuthorizedHttp(
-            credentials, http=httplib2.Http()
-        )
-        return HttpRequest(new_http, *args, **kwargs)
-
-    authorized_http = google_auth_httplib2.AuthorizedHttp(credentials, http=httplib2.Http())
-    service = build("sheets","v4",requestBuilder=build_request,http=authorized_http,cache_discovery=False)
-    gsheet_connector = service.spreadsheets()
-
-    values = (gsheet_connector.values()
-        .get(spreadsheetId=st.secrets["sheet_id"],range=f"{SHEET_NAME}!{Cols}")
-        .execute()
-    )
-    df = pd.DataFrame(values["values"])
-    df.columns = df.iloc[0,:]
-    df = df[1:]    
-    return df  
+sheet_url_xero = st.secrets["private_gsheets_url"] + st.secrets["xero"]
 
 #%%
 
@@ -62,7 +33,7 @@ def run():
 
     with st.sidebar:
         payslip_choice = st.radio("Use Payslips:",['Yes','No'],horizontal=True)
-        giftaid_choice = st.radio("Giftaid Choice:",['On-going','Lump-sum'],horizontal=True)
+        giftaid_choice = st.sidebar.radio("Giftaid Choice:",['Accrual','Cash'],horizontal=True)
 
     if 'payslips' not in st.session_state:
         st.session_state["payslips"] = payslip_choice
@@ -101,30 +72,56 @@ def run():
 
             # Download all Bank Data
             if 'income' not in st.session_state:
-                tmp = download_gsheet_values("Income","A:I")
+                tmp = utils.download_gsheet_values("Income","A:J")
+                num_cols = ['Credit_Amount','Giftaid']
+                tmp[num_cols] = tmp[num_cols].apply(lambda x: pd.to_numeric(x.astype(str)
+                                                .str.replace(',',''), errors='raise'))
+                tmp = tmp[tmp.Weekend_Away!='1'][tmp.columns[:-1]]
                 tmp['Transaction_Date'] = pd.to_datetime(tmp['Transaction_Date'],format="%d/%m/%Y")
-                tmp['Academic_Year'] = tmp['Transaction_Date'].map(lambda d: d.year + 1 if d.month > 8 else d.year)
-                tmp['Month'] = tmp['Transaction_Date'].dt.to_period('M')
-                tmp['Giftaid_Amount'] = pd.to_numeric(tmp['Credit_Amount']) * pd.to_numeric(tmp['Giftaid'])
-                tmp['Recipient'] = ['General' if x=='Morgan' else x for x in tmp['Recipient']]
-                tmp = tmp[tmp.Recipient!='House'] #remove house donations
+                tmp = utils.download_xero(tmp,income_flag=True)
+                tmp['Transaction_Date'] = pd.to_datetime(tmp['Transaction_Date'],format="%d/%m/%Y")
+                #tmp['Academic_Year'] = tmp['Transaction_Date'].map(lambda d: d.year + 1 if d.month > 8 else d.year)
+                tmp['Academic_Year'] = utils.academic_year(tmp['Transaction_Date'])
+                tmp['Tax_Year'] = utils.tax_year(tmp['Transaction_Date'])
+                tmp['Calendar_Year'] = tmp['Transaction_Date'].apply(lambda x: x.year)
+                #tmp['Month'] = tmp['Transaction_Date'].dt.to_period('M')
+                tmp['Giftaid_Amount'] = utils.num_mult(tmp['Credit_Amount'],tmp['Giftaid'])
+                tmp['Recipient'] = ['International' if x=='Morgan' else x for x in tmp['Recipient']]
+                tmp['Recipient'] = ['International' if x=='General' else x for x in tmp['Recipient']]
+                tmp['Source'] = tmp['Source'].fillna('Internal')
+                tmp = tmp.drop_duplicates()
+                #tmp = tmp[tmp.Recipient!='House'] #remove house donations
+
                 st.session_state["income"] = tmp
+
             if 'expenses' not in st.session_state:
-                tmp2 = download_gsheet_values("Expenses","A:I")
+                tmp2 = utils.download_gsheet_values("Expenses","A:F")
+                num_cols = ['Debit_Amount']
+                tmp2[num_cols] = tmp2[num_cols].apply(lambda x: pd.to_numeric(x.astype(str)
+                                                .str.replace(',',''), errors='raise'))
                 tmp2['Transaction_Date'] = pd.to_datetime(tmp2['Transaction_Date'],format="%d/%m/%Y")
-                tmp2['Debit_Amount'] = pd.to_numeric(tmp2['Debit_Amount'])
-                tmp2['Academic_Year'] = tmp2['Transaction_Date'].map(lambda d: d.year + 1 if d.month > 8 else d.year)
+                tmp2['Debit_Amount'] = pd.to_numeric(tmp2['Debit_Amount'],errors='coerce')
+                tmp2 = utils.download_xero(tmp2,income_flag=False)
+                #tmp2['Academic_Year'] = tmp2['Transaction_Date'].map(lambda d: d.year + 1 if d.month > 8 else d.year)
+                tmp2['Academic_Year'] = utils.academic_year(tmp2['Transaction_Date'])
+                tmp2['Tax_Year'] = utils.tax_year(tmp2['Transaction_Date'])
+                tmp2['Calendar_Year'] = tmp2['Transaction_Date'].dt.year
+                tmp2['Recipient'] = ['International' if x=='General' else x for x in tmp2['Recipient']]
+                tmp2['Category'] = tmp2['Category'].fillna('Expenses')
+                tmp2 = tmp2[tmp2.Reference!='WE Away']
                 st.session_state["expenses"] = tmp2
+                
             if 'givers' not in st.session_state:
-                givers = download_gsheet_values("Givers","A:F")
+                givers = utils.download_gsheet_values("Givers","A:F")
                 givers['Giftaid_Amount'] = pd.to_numeric(givers['Amount']) * pd.to_numeric(givers['Giftaid'])
                 givers['Annual_Multiplier'] = [12 if x=='Monthly' else 1 for x in givers['Regularity']]
-                givers['Annual_Amount'] = pd.to_numeric(givers['Annual_Multiplier']) * pd.to_numeric(givers['Giftaid_Amount'])
+                givers['Annual_Amount'] = utils.num_mult(givers['Annual_Multiplier'],givers['Giftaid_Amount'])
                 st.session_state["givers"] = givers
+
             if 'costs' not in st.session_state:
-                costs = download_gsheet_values("Costs","A:E")
+                costs = utils.download_gsheet_values("Costs","A:E")
                 costs['Annual_Multiplier'] = [12 if x=='Monthly' else 1 for x in costs['Regularity']]
-                costs['Annual_Amount'] = pd.to_numeric(costs['Annual_Multiplier']) * pd.to_numeric(costs['Amount'])
+                costs['Annual_Amount'] = utils.num_mult(costs['Annual_Multiplier'],costs['Amount'])
                 st.session_state["costs"] = costs
 
             t2 = datetime.now()
