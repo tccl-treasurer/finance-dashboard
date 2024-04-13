@@ -256,7 +256,31 @@ def download_xero(df,income_flag):
         df = pd.concat([df,xero],axis=0)
         return df
 
+
+def report_table(report_df,sign):
+
+    df = report_df[report_df.Classification_sign==sign].groupby(
+        ['Calendar_Year','AccountCode','*Name'])['Total'].sum(
+        ).to_frame('Total'
+        ).sort_values(by='Calendar_Year',ascending=False
+        ).pivot_table(index=['AccountCode','*Name'],columns='Calendar_Year',values='Total',sort=False
+        ).sort_values(by='AccountCode'
+        ).fillna(0
+        ).reset_index().set_index('AccountCode')
     
+    df.loc['Total']= df.sum()
+    df.loc[df.index[-1], '*Name'] = ''
+
+    height = len(df) * 37
+
+    df_styled = df.style.set_properties(**{'text-align': 'center'})
+    df_styled = df_styled.format(subset=[x for x in report_df['Calendar_Year'].unique()], formatter="£{:,.2f}")
+
+    return df_styled, height, df
+
+def convert_df(df):
+   return df.to_csv(index=False).encode('utf-8')
+
     #partition into income/expenses
     #relabel columns
     #recategorize
