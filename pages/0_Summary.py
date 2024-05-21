@@ -18,8 +18,12 @@ def summary():
 
     st.title("TC Church Finances")
 
-    df = st.session_state['xero_data']
-    
+    try:
+        df = st.session_state['xero_data']
+    except:
+        st.error("No Data Downloaded. Please return to Landing Page tab to Download.")
+        st.stop()
+
     if len(df)==0:
         st.stop()
 

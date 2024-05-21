@@ -19,7 +19,11 @@ def forecast():
 
     st.subheader('Income')
 
-    df = st.session_state['xero_data']
+    try:
+        df = st.session_state['xero_data']
+    except:
+        st.error("No Data Downloaded. Please return to Landing Page tab to Download.")
+        st.stop()
 
     if giftaid:
         df['Total'] = df['SubTotal'] * df['Giftaid_Multiplier']

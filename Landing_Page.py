@@ -39,13 +39,12 @@ def run():
     
     To access the dashboard's functionality, follow the steps below:
                 
-        1. Click on the checkbox below. You will be taken to a new tab.
+        1. Click on the link below. You will be taken to a new tab.
         2. Login to Xero. Click the blue button to "Allow access".
         3. When the next page has loaded, copy the new URL and enter it in the box below.
-        4. This will open a 3rd tab, where you will need to push "Allow access" again.
-        5. You should now see a progress bar appear below the box.
-        6. When it finishes, after 1-2mins, a success message should appear. 
-        7. The dashboard is now ready to use. Select one of the pages from the sidebar. 
+        4. You should now see a progress bar appear below the box.
+        5. When it finishes, after 1-2mins, a success message should appear. 
+        6. The dashboard is now ready to use. Select one of the pages from the sidebar. 
                        
     So far, there are 5 pages, which can be accessed using the sidebar on the left.      
                 
@@ -62,16 +61,14 @@ def run():
     auth_url = ('''https://login.xero.com/identity/connect/authorize?response_type=code''' +
             '''&client_id=''' + client_id + '''&redirect_uri=''' + redirect_url +
             '''&scope=''' + scope + '''&state=123''')
-    
-    #button to refresh 
-    #else load from parquet
-    #else error with need to refresh
+    st.markdown(f"""Open the following <a href="{auth_url}">__link__</a> to download data.""",unsafe_allow_html=True)
 
-    if st.checkbox('Download Data'):
+    auth_res_url = st.text_input('Enter the response URL:',None)
+       
+    if auth_res_url is not None:
 
         # if st.checkbox('Authorize and Download'):
-        webbrowser.open_new(auth_url)
-        auth_res_url = st.text_input('Enter the response URL:')
+        #webbrowser.open_new(auth_url)
         if len(auth_res_url)==0:
             st.stop()
 
@@ -110,11 +107,16 @@ def run():
         df['Directional_Total'] = df['Total'] * df['Classification_sign']
         #df.to_parquet('xero_data.parquet')
         st.session_state['xero_data'] = df
+        container = st.empty()
+        with container:
+            st.success("Download Successful")
+            time.sleep(0.5)
+        container.empty()
 
-    if os.path.exists('xero_data.parquet'):    
-        st.session_state['xero_data'] = pd.read_parquet('xero_data.parquet')
-    else:
-        st.write("No local data, please push Refresh to download")
+    # if os.path.exists('xero_data.parquet'):    
+    #     st.session_state['xero_data'] = pd.read_parquet('xero_data.parquet')
+    # else:
+    #     st.write("No local data, please push Refresh to download")
     
 if __name__ == "__main__":
     run()

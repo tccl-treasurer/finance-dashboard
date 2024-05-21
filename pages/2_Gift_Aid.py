@@ -10,7 +10,11 @@ def giftaid():
     st.title("Gift Aid Claim")
     st.write("Please note if you are claiming for donations in multiple financial years, HMRC prefers each line to refer to only one year at a time (ie resulting in multiple entries for the same person)")
 
-    giftaid_df = st.session_state['xero_data']
+    try:
+        giftaid_df = st.session_state['xero_data']
+    except:
+        st.error("No Data Downloaded. Please return to Landing Page tab to Download.")
+        st.stop()
 
     if len(giftaid_df)==0:
         st.error("Error. First go to Home to Download Data from Xero.")

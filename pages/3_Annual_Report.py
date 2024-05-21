@@ -9,7 +9,12 @@ def annual_report():
 
     st.title("Annual Report Breakdown")
 
-    report_df = st.session_state['xero_data']
+    try:
+        report_df = st.session_state['xero_data']
+    except:
+        st.error("No Data Downloaded. Please return to Landing Page tab to Download.")
+        st.stop()
+
     report_df['Calendar_Year'] = np.where(((report_df.Date.dt.month==4) & (report_df.Date.dt.day>5)) \
                                           | (report_df.Date.dt.month>4),0,1) + report_df.Date.dt.year
     
