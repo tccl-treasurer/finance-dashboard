@@ -10,10 +10,10 @@ def annual_report():
     st.title("Annual Report Breakdown")
 
     report_df = st.session_state['xero_data']
-    report_df['Calendar_Year'] = np.where(report_df.Date.dt.month==1,0,1) + report_df.Date.dt.year
-    report_df['Calendar_Year'] = utils.tax_year(report_df['Date'])
+    report_df['Calendar_Year'] = np.where(((report_df.Date.dt.month==4) & (report_df.Date.dt.day>5)) \
+                                          | (report_df.Date.dt.month>4),0,1) + report_df.Date.dt.year
     
-    years = st.multiselect('Select Years to View',report_df['Calendar_Year'].unique().tolist())
+    years = st.multiselect('Select Years to View',report_df['Calendar_Year'].unique().tolist(),[2023,2024])
     report_df = report_df[report_df.Calendar_Year.isin(years)]
 
     st.subheader('Income')
@@ -31,6 +31,7 @@ def annual_report():
         "Download",csv,"income.csv","text/csv",key='download-csv'
     )
 
+    st.subheader('Audit Section')
     with st.form('Dive'):
         choice = st.selectbox('Choose an Account Code to view transactions',report_df['*Name'].sort_values().unique().tolist(),0)
         submit = st.form_submit_button()

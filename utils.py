@@ -1,261 +1,138 @@
-#%%
+import inspect
+import textwrap
+import streamlit as st
 import numpy as np
 import pandas as pd
 import streamlit as st
 import math
-import plotly.express as px
 from re import sub
 from decimal import Decimal
-# from st_aggrid import AgGrid
-# from st_aggrid.grid_options_builder import GridOptionsBuilder
 import time 
 from datetime import datetime
-from google.oauth2 import service_account
-from googleapiclient.discovery import build
-from googleapiclient.http import HttpRequest
-import google_auth_httplib2
-import httplib2
+import requests
+import json
+import webbrowser
+import base64
+from io import StringIO
+import altair as alt
 
+def expense_category1():
+    return {
+    320:'Salaries',
+    479:'Salaries',
+    418:'Donations to Churches',
+    4115:'Equipment, Books & Fliers',
+    4108:'Kids & Youth Work',
+    4114:'Food',
+    482:'Salaries',
+    4105:'Events',
+    4116:'Hardship Fund',
+    4106:'Kids & Youth Work',
+    401:'Admin',
+    4101:'Equipment, Books & Fliers',
+    4112:'Equipment, Books & Fliers',
+    4113:'Ministry Training',
+    4103:'Events',
+    4111:'General',
+    429:'General',
+    4119:'Equipment, Books & Fliers',
+    4109:'Ministry Training',
+    4117:'Equipment, Books & Fliers',
+    720:'Equipment, Books & Fliers',
+    4102:'Events',
+    425:'Admin',
+    4104:'Events',
+    430:'Admin',
+    433:'Admin',
+    463:'Equipment, Books & Fliers'
+}
+
+def expense_category2():
+    return {
+    320:'Salaries',
+    479:'Salaries',
+    418:'Donations to Other Churches',
+    4115:'Church Equipment',
+    4108:'Kids & Youth Work',
+    4114:'Food',
+    482:'Salaries',
+    4105:'Revive',
+    4116:'Hardship Fund',
+    4106:'Kids & Youth Work',
+    401:'Accounting/Finance',
+    4101:'Books',
+    4112:'Music',
+    4113:'Ministry Training',
+    4103:'Events',
+    4111:'Other Staff Expenses',
+    429:'General',
+    4119:'Venue costs',
+    4109:'Ministry Training',
+    4117:'Fliers & Advertising',
+    720:'Church Equipment',
+    4102:'Events',
+    425:'Admin',
+    4104:'Events',
+    430:'Admin',
+    433:'Insurance',
+    463:'Tech'
+}
 
 #%%
 
-Scope = "https://www.googleapis.com/auth/spreadsheets"
-
-def download_gsheet_values(SHEET_NAME,Cols,SCOPE=Scope):
-    # Create a connection object.
-    credentials = service_account.Credentials.from_service_account_info(
-    st.secrets["gcp_service_account"],scopes=[SCOPE])
-
-    def build_request(http, *args, **kwargs):
-        new_http = google_auth_httplib2.AuthorizedHttp(
-            credentials, http=httplib2.Http()
-        )
-        return HttpRequest(new_http, *args, **kwargs)
-
-    authorized_http = google_auth_httplib2.AuthorizedHttp(credentials, http=httplib2.Http())
-    service = build("sheets","v4",requestBuilder=build_request,http=authorized_http,cache_discovery=False)
-    gsheet_connector = service.spreadsheets()
-
-    values = (gsheet_connector.values()
-        .get(spreadsheetId=st.secrets["sheet_id"],range=f"{SHEET_NAME}!{Cols}")
-        .execute()
-    )
-    df = pd.DataFrame(values["values"])
-    df.columns = df.iloc[0,:]
-    df = df[1:]    
-    return df  
-
-def AgGrid_default(DF,curreny_cols=[],pinned_cols=[],min_height=600):
-        gb = GridOptionsBuilder.from_dataframe(DF)
-        gb.configure_grid_options(enableRangeSelection=True)
-        
-        for col in curreny_cols:
-                # if st.session_state["currency_choice"]=='GBP':
-                gb.configure_column(col, 
-                                    type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"], 
-                                    #custom_currency_symbol="£", aggFunc='max',
-                                    valueGetter=f"data.{col}.toLocaleString('en-US',{{style: 'currency', currency: 'GBP', maximumFractionDigits:0}});")
-                                    
-                    
-                # elif st.session_state["currency_choice"]=='USD':
-                #     gb.configure_column(col, type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"], custom_currency_symbol="$", aggFunc='max')
-        
-        for col in pinned_cols:
-                    gb.configure_column(col,pinned=True)
-
-        out = AgGrid(DF,
-        gridOptions=gb.build(),
-        fill_columns_on_grid_load=True,
-        height=min(min_height,36*(len(DF)+1)),
-        allow_unsafe_jscode=True,
-        enable_enterprise_modules=True
-        )
-
-        return out
-
-def reindex_pivot(df,years):
-    df3 = pd.DataFrame()
-    cols_reversed = df.columns.tolist()
-    cols_reversed.reverse()
-    for i in cols_reversed:
-        if i in years:
-            df3[i] = df[i] 
-        else:
-            df3.insert(0,i,df[i])
-    return df3
-
-def num_mult(a,b):
-    tmp_a = pd.to_numeric(a,errors='raise')
-    tmp_b = pd.to_numeric(b,errors='raise')
-    return tmp_a * tmp_b
-
-# Convert to USD/GBP
-def convert_gbpusd(curr): 
-
-    tmp = st.session_state["data"]
-
-    if curr=='USD':
-        tmp['Credit Amount'] = tmp['Credit Amount USD']
-        tmp['Debit Amount'] = tmp['Debit Amount USD']
-    elif curr=='GBP':
-        tmp['Credit Amount'] = tmp['Credit Amount GBP']
-        tmp['Debit Amount'] = tmp['Debit Amount GBP']
-
-    st.session_state["data"] = tmp
-
-    # Choice flows through into DM and TRD
-    DM = tmp[['Renamer','Source Type','Y','Credit Amount','Debit Amount']].groupby(['Renamer','Source Type','Y']).sum().reset_index()
-    st.session_state["DM"] = DM
-    try: 
-        st.session_state["TRD"] = DM[DM['Renamer']!=st.session_state["giftaid_fake_name"]]           
-    except:
-        st.session_state["TRD"] = DM[DM['Renamer']!='Gift Aid (HMRC Charities)']
-
-def giftaid_toggle(giftaid_choice): 
-
-    tmp = st.session_state["income"]
-
-    if giftaid_choice=='Accrual':
-        tmp['Income_Amount'] = tmp['Giftaid_Amount']
-    elif giftaid_choice=='Cash':
-        tmp['Income_Amount'] = tmp['Credit_Amount']
-
-    #tmp['Income_Amount'] = pd.to_numeric(tmp['Income_Amount'],errors='coerce')
-
-    st.session_state["income"] = tmp
-
-def format_plotly(fig,x=0.5,y=-0.2,background='#7c98cb',font_color='white'):
-        fig = fig.update_layout(legend=dict(orientation="h", y=y, x=x))
-        fig = fig.update_layout({'plot_bgcolor': background, 'paper_bgcolor': background,})
-        fig = fig.update_layout(font_color=font_color,title_font_color=font_color,
-                                legend_title_font_color=font_color)
-        fig = fig.update_xaxes(linecolor='white')
-        fig = fig.update_yaxes(gridcolor='white')
-        fig.update_traces(textposition='inside',texttemplate = "%{value:,.3s} ")
-        fig.update_layout(uniformtext_minsize=12, uniformtext_mode='hide')
-        #fig = fig.update_traces(marker_colorscale =['#1054da','#ea5e5b'])
-        #fig = fig.update_layout()
-        return fig
-
-#password check
-#using Option 2 here: https://docs.streamlit.io/knowledge-base/deploy/authentication-without-sso
-def check_password():
-    """Returns `True` if the user had the correct password."""
-
-    def password_entered():
-        """Checks whether a password entered by the user is correct."""
-        if (
-        st.session_state["username"] in st.secrets["passwords"]
-        and st.session_state["password"]
-        == st.secrets["passwords"][st.session_state["username"]]
-        ):
-            st.session_state["password_correct"] = True
-            del st.session_state["password"]  # don't store username + password
-            #del st.session_state["username"] # store username for anon check
-
-        else:
-            st.session_state["password_correct"] = False
-
-    if "password_correct" not in st.session_state:
-        # First run, show inputs for username + password.
-        st.text_input("Username", key="username") #on_change=password_entered,
-        st.text_input("Password", type="password", on_change=password_entered, key="password")
-        return False
-    elif not st.session_state["password_correct"]:
-        # Password not correct, show input + error.
-        st.text_input("Username", key="username") #on_change=password_entered,
-        st.text_input("Password", type="password", on_change=password_entered, key="password")
-        st.error("😕 User not known or password incorrect")
-        return False
+def year_definition(df, option=None):
+    
+    if option=='tax':
+        ret = []
+        for i in df:
+            if (i.month > 4) | ((i.month==4) & (i.day>5)):
+                ret.append(i.year+1)
+            else:
+                ret.append(i.year)
+        return ret
+    elif option=='academic':
+        ret = []
+        for i in df:
+            if i.month > 8: 
+                ret.append(i.year+1)
+            else:
+                ret.append(i.year)
+        return ret
     else:
-        # Password correct.
-        return True
-
-def tax_year(d: pd.Series) -> pd.Series:
-    ret = []
-    for i in d:
-        if (i.month > 4) | ((i.month==4) & (i.day>5)):
-            ret.append(i.year+1)
-        else:
-            ret.append(i.year)
-    return ret
-
-def academic_year(d: pd.Series) -> pd.Series:
-    ret = []
-    for i in d:
-        if i.month > 8: 
-            ret.append(i.year+1)
-        else:
-            ret.append(i.year)
-    return ret
-
-def download_xero(df,income_flag):
-    #download from google sheet tab
-    xero = download_gsheet_values("Xero","A:H")
-    xero['Date'] = pd.to_datetime(xero['Date'],format="%d %b %Y")
-    xero_min_date = xero.Date.min()
-    df = df[df.Transaction_Date<xero_min_date]
-    num_cols = ['Account Code','Credit','Debit']
-    xero[num_cols] = xero[num_cols].apply(lambda x: pd.to_numeric(x.astype(str)
-                                                   .str.replace(',',''), errors='raise'))
-    xero = xero[xero['Account Code'].isin([600,800,960,997])==False]
-    xero = xero[xero['Account Code'].isnull()==False]
-    cols = df.columns.tolist()
-
-    if income_flag:
-        givers = download_gsheet_values("Givers","A:F")
-        xero = xero[xero.Credit>0]
-        xero['TD'] = 'xero'
-        xero['Ref'] = 'xero'
-        xero['Name'] = xero['Name'].str.title()
-        givers['Name'] = givers['Name'].str.title()
-        xero = xero.merge(givers[['Name','Source']],on='Name',how='left')
-        xero['Regularity'] = ['Regular' if 'Regular' in x else 'One-off' for x in xero.Account]
-        xero['Giftaid'] = [1.25 if (x==211) | (x==214) else 1 for x in xero['Account Code']]
-        xero['Giftaid'] = [0 if x=='Hmrc' else y for x, y in zip(xero['Name'],xero['Giftaid'])]
-        xero['TD'] = ['Weekend Away' if x==263 else y for x , y in zip(xero['Account Code'],xero['TD'])]
-        return_cols = ['TD','Credit','Date','Ref','Name','Source','Congregation','Regularity','Giftaid']
-        xero = xero[return_cols]
-        xero.columns = cols
-        df = pd.concat([df,xero],axis=0)
         return df
 
-    else:
+# def download_xero(df,income_flag):
+#     #download from google sheet tab
+#     xero = download_gsheet_values("Xero","A:H")
+#     xero['Date'] = pd.to_datetime(xero['Date'],format="%d %b %Y")
 
-        category_dict = {
-            263:'Expenses',
-            430:'Expenses',
-            433:'Expenses',
-            401:'Expenses',
-            463:'Expenses',
-            #4105:'Expenses',
-            4110:'Expenses',
-            4112:'Expenses',
-            4114:'Expenses',
-            480:'Expenses',
-            4102:'Expenses',
-            470:'Housing',
-            4106:'Expenses',
-            4120:'Expenses',
-            4105:'Weekend Away',
-            #4105:'Expenses',
-            858:'Salaries',
-            4111:'Expenses',
-            477:'Salaries',
-            493:'Expenses',
-            4118:'Venue Hire'
-        }
-        cat_df = pd.DataFrame.from_dict(category_dict,orient='index').reset_index()
-        cat_df.columns = ['Account Code','Category']
+#     if income_flag:
+#         #code
+#         return xero
 
-        xero = xero[xero.Debit>0]
-        xero = pd.merge(xero,cat_df,how='left',on='Account Code')
-        return_cols = ['Date','Account','Debit','Account','Category','Congregation']
-        xero = xero[return_cols]
-        xero.columns = cols
-        df = pd.concat([df,xero],axis=0)
-        return df
+#     else:
 
+#         category_dict = {
+#             430:'Expenses',
+#             433:'Expenses',
+#             401:'Expenses',
+#             463:'Expenses',
+#             4105:'Expenses',
+#             4110:'Expenses',
+#             4112:'Expenses',
+#             4114:'Expenses',
+#             480:'Expenses',
+#             4102:'Expenses',
+#             470:'Housing',
+#             4106:'Expenses',
+#             4120:'Expenses',
+#             4105:'Weekend Away',
+#             858:'Salaries',
+#             4111:'Expenses',
+#             477:'Salaries',
+#             493:'Expenses'
+#         }
+#         return xero
 
 def report_table(report_df,sign):
 
@@ -281,31 +158,146 @@ def report_table(report_df,sign):
 def convert_df(df):
    return df.to_csv(index=False).encode('utf-8')
 
-    #partition into income/expenses
-    #relabel columns
-    #recategorize
-    #return
-    #toggle for academic, calendar and tax year
 
+def XeroFirstAuth(auth_res_url,b64_id_secret,redirect_url):
+    
+    # b64_id_secret = base64.b64encode(bytes(client_id + ':' + client_secret, 'utf-8')).decode('utf-8')
+    # auth_res_url = input('What is the response URL? ')
 
-# If guest account, anonymize names:
-# https://towardsdatascience.com/how-to-quickly-anonymize-personal-names-in-python-6e78115a125b
-# https://pypi.org/project/anonymizedf/
+    #http://localhost:5000/?code=GeNwsDe-doWJbAIwelU6xgRzkgN9JbDbO2uddQwFbz0&scope=accounting.transactions.read%20offline_access&state=123
+    #auth_res_url = "http://localhost:5000/?code=QbCn4Z2-uyo_Nr2mSKt9r2Ef__jB2cHzDfAxbG1NgSc&scope=accounting.transactions.read%20offline_access&state=123"
+    start_number = auth_res_url.find('code=') + len('code=')
+    end_number = auth_res_url.find('&scope')
+    auth_code = auth_res_url[start_number:end_number]
+    #print(auth_code)
+    #print('\n')
 
-# if st.experimental_user['email'] is not None:
-#     st.session_state["data"] = tmp
-# elif st.session_state["username"]=="admin":
-#     st.session_state["data"] = tmp
-# else:    
-#     an = anonymize(tmp)
-#     an.fake_names("Renamer")
-#     tmp['Renamer'] = tmp['Fake_Renamer']
-#     st.session_state["data"] = tmp
+    # 3. Exchange the code
+    exchange_code_url = 'https://identity.xero.com/connect/token'
+    response = requests.post(exchange_code_url, 
+                            headers = {
+                                'Authorization': 'Basic ' + b64_id_secret
+                            },
+                            data = {
+                                'grant_type': 'authorization_code',
+                                'code': auth_code,
+                                'redirect_uri': redirect_url
+                            })
+    json_response = response.json()
+    #st.write(json_response)
+    #print(json_response)
+    #print('\n')
+    return [json_response['access_token'], json_response['refresh_token']]
 
-# Payslip processing
-# Using format of saved file
-# df = pd.read_csv('Payslips_2019_202209.csv')
-# df.Date = df.Date.ffill()
-# df = df[~df['Employee Name'].isin(['Process Date:','Employee\nName'])]
-# df
 # %%
+# 5. Check the full set of tenants you've been authorized to access
+def XeroTenants(access_token):
+    connections_url = 'https://api.xero.com/connections'
+    response = requests.get(connections_url,
+                           headers = {
+                               'Authorization': 'Bearer ' + access_token,
+                               'Content-Type': 'application/json'
+                           })
+    json_response = response.json()
+    #print(json_response)
+    
+    for tenants in json_response:
+        json_dict = tenants
+    return json_dict['tenantId']
+
+# %%
+def XeroRefreshToken(refresh_token,b64_id_secret):
+    token_refresh_url = 'https://identity.xero.com/connect/token'
+    response = requests.post(token_refresh_url,
+                            headers = {
+                                'Authorization' : 'Basic ' + b64_id_secret,
+                                'Content-Type': 'application/x-www-form-urlencoded'
+                            },
+                            data = {
+                                'grant_type' : 'refresh_token',
+                                'refresh_token' : refresh_token
+                            })
+    json_response = response.json()
+    #print(json_response)
+    
+    new_refresh_token = json_response['refresh_token']
+    #rt_file = open('refresh_token.txt', 'w')
+    #rt_file.write(new_refresh_token)
+    #rt_file.close()
+    
+    return [json_response['access_token'], json_response['refresh_token']]
+
+#XeroRefreshToken(json_response['refresh_token'])
+
+# %%
+
+@st.cache_data(show_spinner=False)
+def DownloadXeroData(old_refresh_token,b64_id_secret):
+    #old_refresh_token = open('refresh_token.txt', 'r').read()
+    new_tokens = XeroRefreshToken(old_refresh_token,b64_id_secret)
+    xero_tenant_id = XeroTenants(new_tokens[0]) 
+
+    out = {}
+    response_length = 1_000
+    progress_text = "Downloading Transactions from the Xero API"
+    my_bar = st.progress(0, text=progress_text)
+    p = 1
+    while response_length >= 170: 
+        get_url = f'https://api.xero.com/api.xro/2.0/BankTransactions?page={p}'
+        response = requests.get(get_url,
+                            headers = {
+                                'Authorization': 'Bearer ' + new_tokens[0],
+                                'Xero-tenant-id': xero_tenant_id,
+                                'Accept': 'application/json'
+                            })
+        out[p] = json.dumps(response.json())
+        response_length = len(out[p])
+        #print(f'Page {p}, length = {response_length}')
+        #st.write(f'Page {p}, length = {response_length}')
+        p += 1
+        if p<22:
+            my_bar.progress(5*(p-1), text=progress_text)
+        
+    my_bar.progress(100, text=progress_text)   
+    json_response = {}
+    for k,v in out.items():
+        json_response[k] = pd.read_json(StringIO(v))
+    json_response = pd.concat(json_response.values()).reset_index(drop=True)
+
+    my_bar.empty()
+
+    return json_response
+
+#%%
+
+def altair_bar(plot_df,x,y,color,xOffset=None,stack='zero',text=True,sort_list=None,text_stack=None):
+            
+    fig = alt.Chart(plot_df).mark_bar().encode(
+    x=alt.X(f'{x}:N',sort=sort_list,axis=alt.Axis(labelAngle=0)).title(f'{x.replace("_"," ")}'),
+    y=alt.Y(f'{y}:Q',stack=stack),
+    color=alt.Color(f'{color}:N',sort=sort_list) #.legend(orient="top",direction='horizontal',labelAlign ='left',padding=0)
+    )
+    text_offset = 0
+
+    if xOffset is not None:
+        fig = alt.Chart(plot_df).mark_bar().encode(
+        x=alt.X(f'{x}:N',axis=alt.Axis(labelAngle=0)).title(f'{x.replace("_"," ")}'),
+        y=alt.Y(f'{y}:Q',stack=stack),
+        color=alt.Color(f'{color}:N',sort=sort_list),
+        xOffset=alt.XOffset(field=xOffset,sort=sort_list)
+        )
+        text_offset = 6
+    
+    if text:
+        text = fig.mark_text(dx=text_offset,dy=8,fontSize=14
+                            ).encode(y=alt.Y(f'{y}:Q',stack=text_stack), #stack
+                                    text=alt.Text(f'{y}',format=',.0f'),
+                                    color=alt.value("white")
+                                    )
+    
+        st.markdown('# ')
+        st.altair_chart(fig + text,use_container_width=True)
+    else:
+    
+        st.markdown('# ')
+        st.altair_chart(fig,use_container_width=True)

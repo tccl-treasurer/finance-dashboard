@@ -1,9 +1,2 @@
+__pycache__
 secrets.toml
-*.pyc
-_pycache_
-Giver Match.csv
-utils.cpython-39.pyc
-tc.yml
-to_do.md
-*.parquet
-Annual Report/
