@@ -79,10 +79,23 @@ def summary():
                 exclude_categories,df[df['*Name'].str.contains(word)][['*Code','*Name']].drop_duplicates()
             ],axis=0)
         #exclude_categories['*Code'] = exclude_categories['*Code'].astype('int64')
-        st.write("The following accounts have been excluded:")
-        st.dataframe(exclude_categories.set_index('*Code').sort_index())
-
+        col1, col2 = st.columns([1,1])
+        
         df = df[~df['AccountCode'].isin(exclude_categories['*Code'].astype('int64').tolist())]
+        with col1:
+            st.write("The following accounts have been excluded:")
+            st.dataframe(exclude_categories.set_index('*Code').sort_index())
+        
+        with col2:
+            st.write("The following accounts are still included:")
+            st.dataframe(df[['*Code','*Name']].drop_duplicates().set_index('*Code').sort_index())
+
+    Congregations = st.multiselect('Congregations:',df['Congregation'].dropna().unique(),default=df['Congregation'].dropna().unique())
+
+    df = df[df['Congregation'].isin(Congregations)]
+
+    if st.button('Show'):
+        st.dataframe(df)
 
     st.subheader('Income vs Expenses over Time')
 

@@ -84,34 +84,47 @@ def run():
         mapping = pd.read_csv('ChartOfAccounts.csv')
         s = json_df['BankTransactions']
         df = pd.DataFrame(s.values.tolist(), index=s.index)
+        
         df = df[df.Status!='DELETED']
         df = df[df.Contact.notnull()]
+        df['LineItems0'] = [x[0] for x in df['LineItems']]
+        df['Tracking'] = [x['Tracking'] for x in df['LineItems0']]
+        df = df.reset_index(drop=True)
+        Congregation = []
+        for i in df['Tracking'].index:
+            if len(df['Tracking'].iloc[i])==0:
+                Congregation.append(np.nan)
+            elif df['Tracking'].iloc[i][0]['Name']=='Congregation':
+                Congregation.append(df['Tracking'].iloc[i][0]['Option'])
+            elif df['Tracking'].iloc[i][1]['Name']=='Congregation':
+                Congregation.append(df['Tracking'].iloc[i][1]['Option'])
+            elif df['Tracking'].iloc[i][2]['Name']=='Congregation':
+                Congregation.append(df['Tracking'].iloc[i][2]['Option'])
+            else:
+                Congregation.append(np.nan)
+        df['Congregation'] = Congregation
         df['BankAccountName'] = [x['Name'] for x in df['BankAccount']]
         df['BankAccountID'] = [x['AccountID'] for x in df['BankAccount']]
         df['ContactID'] = df['Contact'].apply(lambda x: x['ContactID'])
         df['Name'] = df['Contact'].apply(lambda x: x['Name'])
         df['Date'] = pd.to_datetime(df['DateString'])
         df['AccountCode'] = df['LineItems'].apply(lambda x: x[0]['AccountCode'])
+        #df['AccountCode'] = [x['AccountCode'] for x in df['LineItems']]
         df = pd.merge(df,mapping,left_on=['AccountCode'],right_on=['*Code'])
         df['AccountCode'] = pd.to_numeric(df['AccountCode'],errors='raise')
         df['Year'] = df.Date.dt.year
         df['Quarter'] = df.Date.dt.to_period('Q')
         df['Tax_Year'] = utils.year_definition(df['Date'],option='tax')
         df['Academic_Year'] = utils.year_definition(df['Date'],option='academic')
-        df = df[df.AccountCode!=150]
+        df = df[~df.AccountCode.isin([150,850])]
         df['Giftaid_Multiplier'] = np.where(df.AccountCode<125,1.25,1)
+        df['Giftaid_Multiplier'] = np.where(df.AccountCode==234,0,df['Giftaid_Multiplier'])
         df['Total'] = df['Total'] * df['Giftaid_Multiplier']
         s = df['AccountCode']
         df['Classification'] = np.where(s<300,'Income','Expenses')
         df['Classification_sign'] = np.where(s<300,1,-1)
         df['Directional_Total'] = df['Total'] * df['Classification_sign']
-        #df.to_parquet('xero_data.parquet')
         st.session_state['xero_data'] = df
-        container = st.empty()
-        with container:
-            st.success("Download Successful")
-            time.sleep(0.5)
-        container.empty()
 
     # if os.path.exists('xero_data.parquet'):    
     #     st.session_state['xero_data'] = pd.read_parquet('xero_data.parquet')

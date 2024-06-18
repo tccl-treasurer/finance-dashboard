@@ -240,6 +240,12 @@ def DownloadXeroData(old_refresh_token,b64_id_secret):
     out = {}
     response_length = 1_000
     progress_text = "Downloading Transactions from the Xero API"
+    response = requests.get("""https://api.xero.com/api.xro/2.0/TrackingCategories""",
+                        headers = {
+                            'Authorization': 'Bearer ' + new_tokens[0],
+                            'Xero-tenant-id': xero_tenant_id,
+                            'Accept': 'application/json'
+                        })
     my_bar = st.progress(0, text=progress_text)
     p = 1
     while response_length >= 170: 
