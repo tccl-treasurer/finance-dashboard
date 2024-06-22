@@ -88,6 +88,7 @@ def summary():
 
     st.subheader('Income vs Expenses over Time')
 
+    df = df[df['Congregation'].isin(Congregations)]
     plot_df = df.groupby(['Time_Group','Classification'])['Total'].sum().reset_index()
     plot_df['Time_Group'] = plot_df['Time_Group'].astype(str)
 
