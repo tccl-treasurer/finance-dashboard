@@ -8,6 +8,7 @@ import utils as utils
 from datetime import datetime, timedelta
 import time
 import altair as alt
+import os
 
 st.set_page_config(layout="wide") 
 
@@ -35,7 +36,18 @@ def forecast():
     income_forecast['Time_Group'] = income_forecast.Date.dt.to_period('M')
     pivot_income = income_forecast.groupby(['Name','Time_Group'])['Total'].sum().reset_index()
     pivot_income = pivot_income.pivot_table(index='Name',columns='Time_Group',values='Total')
-    pivot_income['Monthly Forecast'] = pivot_income.iloc[:,-12:].fillna(0).mean(axis=1) 
+
+    file_path = 'monthly_income_forecast.parquet'
+    if os.path.exists(file_path):
+        mf_df = pd.read_parquet(file_path)
+        pivot_income = pivot_income.join(mf_df)
+        #add means to missing Names
+        pivot_income['Monthly Forecast'] = np.where(pivot_income['Monthly Forecast'].isnull(),
+                                                    pivot_income.iloc[:,-12:].fillna(0).mean(axis=1),
+                                                    pivot_income['Monthly Forecast'])
+    else:
+        pivot_income['Monthly Forecast'] = pivot_income.iloc[:,-12:].fillna(0).mean(axis=1) 
+
     pivot_income = pivot_income.reset_index().set_index(['Name','Monthly Forecast'])
     pivot_income = pivot_income[pivot_income.columns[::-1]].reset_index(level=1) #show months in reverse order
     pivot_income = pivot_income.sort_values(by='Monthly Forecast',ascending=False)
@@ -43,6 +55,7 @@ def forecast():
     st.write('**Monthly Income Forecasts**')
 
     edited_income = st.data_editor(pivot_income, num_rows="dynamic")
+    edited_income[['Monthly Forecast']].to_parquet(file_path)
 
     monthly_income = edited_income['Monthly Forecast'].sum()
 
@@ -72,9 +85,20 @@ def forecast():
     expense_forecast['Category'] = expense_forecast['*Name']
     expense_forecast['Time_Group'] = expense_forecast.Date.dt.to_period('M')
     expense_forecast = expense_forecast.groupby(['Time_Group','Category'])['Total'].sum().reset_index()
-    pivot_expense = expense_forecast.groupby(['Category','Time_Group'])['Total'].sum().reset_index()
+    pivot_expense = expense_forecast.groupby(['Category','Time_Group'])['Total'].sum().reset_index() 
     pivot_expense = pivot_expense.pivot_table(index='Category',columns='Time_Group',values='Total')
-    pivot_expense['Monthly Forecast'] = pivot_expense.iloc[:,-12:].fillna(0).mean(axis=1)
+   
+    file_path = 'monthly_expense_forecast.parquet'
+    if os.path.exists(file_path):
+        mf_df = pd.read_parquet(file_path)
+        pivot_expense = pivot_expense.join(mf_df)
+        #add means to missing Names
+        pivot_expense['Monthly Forecast'] = np.where(pivot_expense['Monthly Forecast'].isnull(),
+                                                    pivot_expense.iloc[:,-12:].fillna(0).mean(axis=1),
+                                                    pivot_expense['Monthly Forecast'])
+    else:
+        pivot_expense['Monthly Forecast'] = pivot_expense.iloc[:,-12:].fillna(0).mean(axis=1) 
+ 
     pivot_expense = pivot_expense.reset_index().set_index(['Category','Monthly Forecast'])
     pivot_expense = pivot_expense[pivot_expense.columns[::-1]].reset_index(level=1) #show months in reverse order
     pivot_expense = pivot_expense.sort_values(by='Monthly Forecast',ascending=False)
@@ -82,6 +106,7 @@ def forecast():
     st.write('**Monthly Expense Forecasts**: Enter Values as positive')
     
     edited_expenses = st.data_editor(pivot_expense, num_rows="dynamic")
+    edited_expenses[['Monthly Forecast']].to_parquet(file_path)
 
     monthly_expenses = edited_expenses['Monthly Forecast'].sum()
 

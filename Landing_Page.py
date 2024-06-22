@@ -109,7 +109,6 @@ def run():
         df['Name'] = df['Contact'].apply(lambda x: x['Name'])
         df['Date'] = pd.to_datetime(df['DateString'])
         df['AccountCode'] = df['LineItems'].apply(lambda x: x[0]['AccountCode'])
-        #df['AccountCode'] = [x['AccountCode'] for x in df['LineItems']]
         df = pd.merge(df,mapping,left_on=['AccountCode'],right_on=['*Code'])
         df['AccountCode'] = pd.to_numeric(df['AccountCode'],errors='raise')
         df['Year'] = df.Date.dt.year

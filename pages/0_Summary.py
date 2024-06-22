@@ -30,7 +30,7 @@ def summary():
     #st.dataframe(df)
     col1, col2, col3 = st.columns([2.5,1.5,1])
     with col1:
-        time_group = st.radio('Choose Time Grouping',['Calendar Year','Tax Year','Academic Year','Quarter','Month',None],horizontal=True)
+        time_group = st.radio('Choose Time Grouping',['Calendar Year','Tax Year','Academic Year','Quarter','Month','Half',None],horizontal=True)
     
     with col2:
         df.Date = pd.to_datetime(df.Date,format='%Y/%m/%d')
@@ -55,6 +55,10 @@ def summary():
         df['Time_Group'] = df['Academic_Year']
     elif time_group=='Month':
         df['Time_Group'] = df.Date.dt.to_period('M')
+    elif time_group=='Half':
+        df['Time_Group']= np.where(df['Date'].dt.month<7,
+                                   df['Date'].dt.year.astype('string')+'H1',
+                                   df['Date'].dt.year.astype('string')+'H2')
     else:
         df['Time_Group'] = 'All'
 
@@ -66,36 +70,21 @@ def summary():
     if other_accounts:
         df = df[df.BankAccountName=='Current Account']
 
-    st.subheader("Exclude Accounts")
+    Congregations = st.multiselect('Select Congregations:',df['Congregation'].dropna().unique(),default=df['Congregation'].dropna().unique())
 
-    accounts_to_exclude = st.text_input('Remove categories containing any of the words:',value=None)
+    with st.expander('Check Categories'):
 
-    if accounts_to_exclude is not None:
-
-        exclude_categories = pd.DataFrame()
-        for word in accounts_to_exclude.split(' '):
-            #st.write(word)
-            exclude_categories = pd.concat([
-                exclude_categories,df[df['*Name'].str.contains(word)][['*Code','*Name']].drop_duplicates()
-            ],axis=0)
-        #exclude_categories['*Code'] = exclude_categories['*Code'].astype('int64')
         col1, col2 = st.columns([1,1])
         
-        df = df[~df['AccountCode'].isin(exclude_categories['*Code'].astype('int64').tolist())]
+        df_ex = df[~df['Congregation'].isin(Congregations)][['*Code','*Name','Congregation']].drop_duplicates()
         with col1:
             st.write("The following accounts have been excluded:")
-            st.dataframe(exclude_categories.set_index('*Code').sort_index())
+            st.dataframe(df_ex.set_index('*Code').sort_index())
         
+        df_inc = df[df['Congregation'].isin(Congregations)][['*Code','*Name','Congregation']].drop_duplicates()
         with col2:
             st.write("The following accounts are still included:")
-            st.dataframe(df[['*Code','*Name']].drop_duplicates().set_index('*Code').sort_index())
-
-    Congregations = st.multiselect('Congregations:',df['Congregation'].dropna().unique(),default=df['Congregation'].dropna().unique())
-
-    df = df[df['Congregation'].isin(Congregations)]
-
-    if st.button('Show'):
-        st.dataframe(df)
+            st.dataframe(df_inc[['*Code','*Name','Congregation']].drop_duplicates().set_index('*Code').sort_index())
 
     st.subheader('Income vs Expenses over Time')
 
@@ -169,9 +158,13 @@ def summary():
 
     utils.altair_bar(plot_df,x='Time_Group',y='Total',color='Category',text=False)
 
-    if st.button('Show Table'):
+    useful_cols = ['Date','Time_Group','Name','Congregation','*Code','*Name','Description','Giftaid_Multiplier','Directional_Total']
+    with st.expander('Show Table'):
+        st.subheader('Expenses by Group')
         st.dataframe(plot_df.pivot_table(columns='Time_Group',index='Category',values='Total'),
                      use_container_width=True)
+        st.subheader('Top Individual Expenses')
+        st.dataframe(df[df['Directional_Total']<-3300][useful_cols].sort_values(by='Directional_Total'),use_container_width=True)
 
     Category_choice = st.selectbox('Select Category to see more details',plot_df.Category.unique(),None)
     
@@ -250,6 +243,10 @@ def summary():
 
     st.markdown('# ')
     st.altair_chart(fig,use_container_width=True)
+    
+    if st.button('Show All Data'):
+        st.dataframe(df[cols])
+
 
     # st.title('Custom Queries')
 
