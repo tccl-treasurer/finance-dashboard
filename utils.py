@@ -19,11 +19,14 @@ import altair as alt
 def expense_category1():
     return {
     320:'Salaries',
+    470:'Salaries',
+    477:'Salaries',
     479:'Salaries',
+    482:'Salaries',
     418:'Donations to Churches',
     4115:'Equipment, Books & Fliers',
     4108:'Kids & Youth Work',
-    4114:'Food',
+    4114:'Events/Hospitality',
     482:'Salaries',
     4105:'Events',
     4116:'Hardship Fund',
@@ -32,8 +35,11 @@ def expense_category1():
     4101:'Equipment, Books & Fliers',
     4112:'Equipment, Books & Fliers',
     4113:'Ministry Training',
-    4103:'Events',
-    4111:'General',
+    4118:'Venue Hire',
+    4103:'Events/Hospitality',
+    4120:'Events/Hospitality',
+    4111:'Staff Expenses',
+    494:'Staff Expenses',
     429:'General',
     4119:'Equipment, Books & Fliers',
     4109:'Ministry Training',
@@ -44,7 +50,10 @@ def expense_category1():
     4104:'Events',
     430:'Admin',
     433:'Admin',
-    463:'Equipment, Books & Fliers'
+    441:'Admin',
+    404:'Admin',
+    463:'Equipment, Books & Fliers',
+    493:'Travel - National'
 }
 
 def expense_category2():
@@ -56,7 +65,7 @@ def expense_category2():
     4108:'Kids & Youth Work',
     4114:'Food',
     482:'Salaries',
-    4105:'Revive',
+    4105:'Weekend Away',
     4116:'Hardship Fund',
     4106:'Kids & Youth Work',
     401:'Accounting/Finance',

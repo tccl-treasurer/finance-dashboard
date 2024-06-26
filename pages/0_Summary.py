@@ -41,7 +41,7 @@ def summary():
     with col3:
         #st.markdown('#### ')
         giftaid = st.toggle('Giftaid',True)
-        other_accounts = st.toggle('Only Current Account',True)
+        weekend_away = st.toggle('Exclude Weekend Away',True)
 
     df = df[df.Date.between(date_range[0],date_range[1])]
 
@@ -67,8 +67,8 @@ def summary():
     else:
         df['Total'] = df['SubTotal']
 
-    if other_accounts:
-        df = df[df.BankAccountName=='Current Account']
+    if weekend_away:
+        df = df[~df.AccountCode.isin([263,4105])]
 
     Congregations = st.multiselect('Select Congregations:',df['Congregation'].dropna().unique(),default=df['Congregation'].dropna().unique())
 
@@ -154,12 +154,13 @@ def summary():
     
     plot_df = df[df.AccountCode>300]
     plot_df['Category'] = plot_df.AccountCode.map(expense_category1)
-    plot_df = plot_df.groupby(['Time_Group','Category'])['Total'].sum().reset_index()
+    plot_df['Category'] = np.where(plot_df['Category'].isnull(),'Uncategorised',plot_df['Category'])
+    plot_df = plot_df.groupby(['Time_Group','AccountCode','*Name','Category'])['Total'].sum().reset_index()
     plot_df['Time_Group'] = plot_df['Time_Group'].astype(str)
 
     utils.altair_bar(plot_df,x='Time_Group',y='Total',color='Category',text=False)
 
-    useful_cols = ['Date','Time_Group','Name','Congregation','*Code','*Name','Description','Giftaid_Multiplier','Directional_Total']
+    useful_cols = ['Date','Time_Group','Name','Congregation','*Code','*Name','Description','SubTotal','Giftaid_Multiplier','Directional_Total']
     with st.expander('Show Table'):
         st.subheader('Expenses by Group')
         st.dataframe(plot_df.pivot_table(columns='Time_Group',index='Category',values='Total'),
@@ -222,9 +223,8 @@ def summary():
 
     plot_df = df.copy()
     plot_df['Category'] = plot_df.AccountCode.map(expense_category1)
-    plot_df = plot_df[(plot_df.AccountCode.isin([210,211,212,213,214,215,])) |
-                (plot_df.Category.isin(['Salaries','Equipment, Books & Fliers',
-                                        'Food','Kids & Youth Work','Admin','General']))]
+    plot_df['Frequency'] = np.where(plot_df['*Name'].str.contains('Regular'),'Regular','One-Off')
+    plot_df = plot_df[(plot_df['Frequency']=='Regular') | (plot_df['Classification']=='Expenses')]
     
     plot_df = plot_df.groupby(['Time_Group','Classification'])['Total'].sum().reset_index()
     plot_df['Time_Group'] = plot_df['Time_Group'].astype(str)
@@ -234,19 +234,16 @@ def summary():
 
     st.subheader('Reserves over Time')
 
-    plot_df = df[['Date','Directional_Total']].set_index('Date').sort_index()
-    plot_df = plot_df.expanding().Directional_Total.sum().reset_index()
+    plot_df = df[['Date','Directional_Total','Time_Group']].set_index('Date').sort_index()
+    plot_df['Running_Total'] = plot_df.expanding().Directional_Total.sum().values
 
-    fig = alt.Chart(plot_df).mark_line().encode(
-    x=alt.X('Date:T'),
-    y=alt.Y('Directional_Total:Q')
-    )
+    plot_df = plot_df.groupby(['Time_Group'])['Running_Total'].last().reset_index()
+    plot_df['Time_Group'] = plot_df['Time_Group'].astype(str)
 
-    st.markdown('# ')
-    st.altair_chart(fig,use_container_width=True)
+    utils.altair_bar(plot_df,x='Time_Group',y='Running_Total',color=None)
     
     if st.button('Show All Data'):
-        st.dataframe(df[cols])
+        st.dataframe(df[useful_cols].sort_values(by='Date'))
 
 
     # st.title('Custom Queries')

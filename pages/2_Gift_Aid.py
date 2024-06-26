@@ -29,9 +29,10 @@ def giftaid():
     giftaid_df['Overall'] = giftaid_df['SubTotal'] * giftaid_df['Giftaid_Multiplier']
 
     giftaid_df['date'] = pd.to_datetime(giftaid_df['DateString'])
+    giftaid_df = giftaid_df[giftaid_df['Giftaid_Multiplier']==1.25]
     #st.time_input('Date Range',)
     cols = ['date','SubTotal','Name','Giftaid_Amount','Overall','AccountCode','Giftaid_Multiplier']
-    chart_df = giftaid_df[giftaid_df['Giftaid_Multiplier']==1.25][cols].groupby('Name').agg(
+    chart_df = giftaid_df[cols].groupby('Name').agg(
                 Num_Donations=('SubTotal',np.count_nonzero),
                 SubTotal=('SubTotal',np.sum),
                 Giftaid_Total=('Giftaid_Amount',np.sum),

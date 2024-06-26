@@ -32,7 +32,7 @@ def forecast():
         df['Total'] = df['SubTotal']
 
     #st.dataframe(forecast_df.head())
-    income_forecast = df[df.AccountCode.between(102,260)] 
+    income_forecast = df[df.AccountCode.between(100,259)] 
     income_forecast['Time_Group'] = income_forecast.Date.dt.to_period('M')
     pivot_income = income_forecast.groupby(['Name','Time_Group'])['Total'].sum().reset_index()
     pivot_income = pivot_income.pivot_table(index='Name',columns='Time_Group',values='Total')
@@ -80,9 +80,9 @@ def forecast():
     st.subheader('Expenses')
 
     expense_forecast = df[df.AccountCode>300]
-    expense_forecast = expense_forecast[expense_forecast.AccountCode!=4105] #remove revive
-    #expense_forecast['Category'] = expense_forecast.AccountCode.map(expense_category1)
-    expense_forecast['Category'] = expense_forecast['*Name']
+    expense_forecast = expense_forecast[expense_forecast.AccountCode!=4105] #remove weekend away
+    expense_category1 = utils.expense_category1()
+    expense_forecast['Category'] = expense_forecast.AccountCode.map(expense_category1)
     expense_forecast['Time_Group'] = expense_forecast.Date.dt.to_period('M')
     expense_forecast = expense_forecast.groupby(['Time_Group','Category'])['Total'].sum().reset_index()
     pivot_expense = expense_forecast.groupby(['Category','Time_Group'])['Total'].sum().reset_index() 
