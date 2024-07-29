@@ -193,7 +193,7 @@ def XeroFirstAuth(auth_res_url,b64_id_secret,redirect_url):
                             })
     json_response = response.json()
     #st.write(json_response)
-    #print(json_response)
+    print(json_response)
     #print('\n')
     return [json_response['access_token'], json_response['refresh_token']]
 
@@ -265,6 +265,7 @@ def DownloadXeroData(old_refresh_token,b64_id_secret):
                                 'Accept': 'application/json'
                             })
         out[p] = json.dumps(response.json())
+        st.write(pd.read_json(StringIO(out[p])).head())
         response_length = len(out[p])
         #print(f'Page {p}, length = {response_length}')
         #st.write(f'Page {p}, length = {response_length}')
