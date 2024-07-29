@@ -265,7 +265,7 @@ def DownloadXeroData(old_refresh_token,b64_id_secret):
                                 'Accept': 'application/json'
                             })
         out[p] = json.dumps(response.json())
-        st.write(pd.read_json(StringIO(out[p])).head())
+        st.write(out[p])
         response_length = len(out[p])
         #print(f'Page {p}, length = {response_length}')
         #st.write(f'Page {p}, length = {response_length}')
