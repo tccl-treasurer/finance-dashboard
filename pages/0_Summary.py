@@ -86,9 +86,10 @@ def summary():
             st.write("The following accounts are still included:")
             st.dataframe(df_inc[['*Code','*Name','Congregation']].drop_duplicates().set_index('*Code').sort_index())
 
+    df = df[df['Congregation'].isin(Congregations)]
+
     st.subheader('Income vs Expenses over Time')
 
-    df = df[df['Congregation'].isin(Congregations)]
     plot_df = df.groupby(['Time_Group','Classification'])['Total'].sum().reset_index()
     plot_df['Time_Group'] = plot_df['Time_Group'].astype(str)
 
