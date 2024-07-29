@@ -130,5 +130,7 @@ def run():
     # else:
     #     st.write("No local data, please push Refresh to download")
     
+    st.write('Last Updated 29th July 2024')
+
 if __name__ == "__main__":
     run()

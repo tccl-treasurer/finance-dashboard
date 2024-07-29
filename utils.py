@@ -256,7 +256,7 @@ def DownloadXeroData(old_refresh_token,b64_id_secret):
                         })
     my_bar = st.progress(0, text=progress_text)
     p = 1
-    while response_length >= 250: 
+    while response_length >= 2500: 
         get_url = f'https://api.xero.com/api.xro/2.0/BankTransactions?page={p}'
         response = requests.get(get_url,
                             headers = {
