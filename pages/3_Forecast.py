@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 import time
 import altair as alt
 import os
+import plotly.express as px
 
 st.set_page_config(layout="wide") 
 
@@ -162,10 +163,14 @@ def forecast():
     forecast_df['Date'] = forecast_df['Month'].astype('str')
     forecast_df['Balance'] = forecast_df['Total'].cumsum()
 
-    utils.altair_bar(forecast_df,x='Date',y='Balance',color=None)
+    plot_df = pd.concat([monthly_income_df.rename(columns={'Total':'Income'}),-monthly_expense_df.rename(columns={'Total':'Expenses'})],axis=1)
+    fig = px.bar(plot_df,x=plot_df.index,y=plot_df.columns,text_auto='.0f',barmode='group')
+    st.plotly_chart(fig,use_container_width=True)
 
-    st.dataframe(forecast_df)
+    fig = px.bar(forecast_df,x='Date',y='Balance',text_auto='.0f')
+    st.plotly_chart(fig,use_container_width=True)
 
+    st.dataframe(forecast_df[['Date','Total','Balance']])
     # get current balance (override-able?)
 
 

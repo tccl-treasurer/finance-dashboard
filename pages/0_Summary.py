@@ -11,6 +11,7 @@ import pandas as pd
 import altair as alt
 import os
 import utils
+import plotly.express as px
 
 def summary():
     
@@ -93,8 +94,10 @@ def summary():
     plot_df = df.groupby(['Time_Group','Classification'])['Total'].sum().reset_index()
     plot_df['Time_Group'] = plot_df['Time_Group'].astype(str)
 
-    utils.altair_bar(plot_df,x='Time_Group',y='Total',color='Classification',
-               xOffset='Classification',sort_list=['Income','Expenses'])
+    fig = px.bar(plot_df,x='Time_Group',y='Total',color='Classification',text_auto=',.0f',barmode='group')
+    st.plotly_chart(fig,use_container_width=True)
+    # utils.altair_bar(plot_df,x='Time_Group',y='Total',color='Classification',
+    #            xOffset='Classification',sort_list=['Income','Expenses'])
     
     st.subheader('Number of Givers')
 
@@ -107,7 +110,9 @@ def summary():
     plot_df = plot_df.groupby(['Time_Group','Source'])['Giver_Count'].sum().reset_index()
     plot_df['Time_Group'] = plot_df['Time_Group'].astype(str)
 
-    utils.altair_bar(plot_df,x='Time_Group',y='Giver_Count',color='Source',stack='zero')
+    # utils.altair_bar(plot_df,x='Time_Group',y='Giver_Count',color='Source',stack='zero')
+    fig = px.bar(plot_df,x='Time_Group',y='Giver_Count',color='Source',text_auto=',.0f')
+    st.plotly_chart(fig,use_container_width=True)
 
     st.subheader('Giving: Regular vs One-Off')
 
@@ -118,7 +123,9 @@ def summary():
     plot_df = plot_df.groupby(['Time_Group','Frequency'])['Total'].sum().reset_index()
     plot_df['Time_Group'] = plot_df['Time_Group'].astype(str)
 
-    utils.altair_bar(plot_df,x='Time_Group',y='Total',color='Frequency',stack='zero',text_stack='zero')
+    # utils.altair_bar(plot_df,x='Time_Group',y='Total',color='Frequency',stack='zero',text_stack='zero')
+    fig = px.bar(plot_df,x='Time_Group',y='Total',color='Frequency',text_auto=',.0f')
+    st.plotly_chart(fig,use_container_width=True)
 
     st.subheader('Giving: Internal vs External')
 
@@ -128,7 +135,9 @@ def summary():
     plot_df = plot_df.groupby(['Time_Group','Source'])['Total'].sum().reset_index()
     plot_df['Time_Group'] = plot_df['Time_Group'].astype(str)
 
-    utils.altair_bar(plot_df,x='Time_Group',y='Total',color='Source')
+    fig = px.bar(plot_df,x='Time_Group',y='Total',color='Source',text_auto=',.0f')
+    st.plotly_chart(fig,use_container_width=True)
+    # utils.altair_bar(plot_df,x='Time_Group',y='Total',color='Source')
 
     st.subheader('Giving: Donor Distribution')
 
@@ -146,6 +155,8 @@ def summary():
     plot_df = plot_df.merge(top5d,how='left',on=['Name','Time_Group'],suffixes=(None,"_y"))
     plot_df = plot_df.groupby(['Time_Group','Top20_flag'])['Total'].sum().reset_index()
 
+    # fig = px.bar(plot_df,x='Time_Group',y='Total',color='Top20_flag',text_auto='.0f')
+    # st.plotly_chart(fig,use_container_width=True)
     utils.altair_bar(plot_df,x='Time_Group',y='Total',color='Top20_flag',stack='normalize',text=False)
 
     st.subheader('Expenses by Category')
@@ -159,7 +170,9 @@ def summary():
     plot_df = plot_df.groupby(['Time_Group','AccountCode','*Name','Category'])['Total'].sum().reset_index()
     plot_df['Time_Group'] = plot_df['Time_Group'].astype(str)
 
-    utils.altair_bar(plot_df,x='Time_Group',y='Total',color='Category',text=False)
+    fig = px.bar(plot_df,x='Time_Group',y='Total',color='Category',text_auto=',.0f')
+    st.plotly_chart(fig,use_container_width=True)
+    # utils.altair_bar(plot_df,x='Time_Group',y='Total',color='Category',text=False)
 
     useful_cols = ['Date','Time_Group','Name','Congregation','*Code','*Name','Description','SubTotal','Giftaid_Multiplier','Directional_Total']
     with st.expander('Show Table'):
@@ -181,7 +194,9 @@ def summary():
         plot_df = plot_df.groupby(['Time_Group','Category'])['Total'].sum().reset_index()
         plot_df['Time_Group'] = plot_df['Time_Group'].astype(str)
 
-        utils.altair_bar(plot_df,x='Time_Group',y='Total',color='Category',text=False)
+        fig = px.bar(plot_df,x='Time_Group',y='Total',color='Category',text_auto=',.0f')
+        st.plotly_chart(fig,use_container_width=True)
+        # utils.altair_bar(plot_df,x='Time_Group',y='Total',color='Category',text=False)
 
     st.subheader('Non-Salary Expenses')
     
@@ -191,34 +206,10 @@ def summary():
     plot_df = plot_df.groupby(['Time_Group','Category'])['Total'].sum().reset_index()
     plot_df['Time_Group'] = plot_df['Time_Group'].astype(str)
     
-    x='Time_Group'
-    y='Total'
-    color='Category'
-    text_offset = 6
-    stack='zero'
-
-    selection = alt.selection_multi(fields=['Category'], bind='legend')
-
-    fig = alt.Chart(plot_df).mark_bar().encode(
-    x=alt.X(f'{x}:N',axis=alt.Axis(labelAngle=0)).title(f'{x.replace("_"," ")}').stack(stack),
-    y=alt.Y(f'sum({y}):Q').stack(stack), 
-    color=alt.Color(f'{color}:N') #.legend(orient="top",direction='horizontal',labelAlign ='left',padding=0)
-    ).add_selection(
-    selection
-    )
-    
-    text = alt.Chart(plot_df).mark_text(
-                        #dy=text_offset,
-                        dy=alt.expr(alt.expr.if_(alt.datum[f'sum({y}):Q'] > 1000, 20, 6)),
-                        dx=3,color='white' #,fontSize=10
-                        ).encode(y=alt.Y(f'sum({y}):Q').stack(stack), #
-                                x=alt.X(f'{x}:N',axis=alt.Axis(labelAngle=0)).title(f'{x.replace("_"," ")}').stack(stack),
-                                detail=f'{color}:N',
-                                text=alt.Text(f'sum({y}):Q',format=',.0f')
-                                )
+    fig = px.bar(plot_df,x='Time_Group',y='Total',color='Category',text_auto=',.0f')
+    st.plotly_chart(fig,use_container_width=True)
 
     st.markdown('# ')
-    st.altair_chart(fig + text,use_container_width=True)
 
     st.subheader('Internal Regular Income vs Core Expenses')
 
@@ -241,11 +232,11 @@ def summary():
     plot_df = plot_df.groupby(['Time_Group'])['Running_Total'].last().reset_index()
     plot_df['Time_Group'] = plot_df['Time_Group'].astype(str)
 
-    utils.altair_bar(plot_df,x='Time_Group',y='Running_Total',color=None)
-    
+    fig = px.bar(plot_df,x='Time_Group',y='Running_Total',text_auto=',.0f')
+    st.plotly_chart(fig,use_container_width=True)
+
     if st.button('Show All Data'):
         st.dataframe(df[useful_cols].sort_values(by='Date'))
-
 
     # st.title('Custom Queries')
 
