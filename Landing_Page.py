@@ -82,8 +82,7 @@ def run():
             time.sleep(0.5)
         success_containter.empty()
         mapping = pd.read_csv('ChartOfAccounts.csv')
-        s = json_df['BankTransactions']
-        df = pd.DataFrame(s.values.tolist(), index=s.index)
+        df = json_df.copy()
         
         df = df[df.Status!='DELETED']
         df = df[df.Contact.notnull()]
@@ -130,7 +129,7 @@ def run():
     # else:
     #     st.write("No local data, please push Refresh to download")
     
-    st.write('Last Updated 29th July 2024')
+    st.write('Code Last Updated 29th July 2024')
 
 if __name__ == "__main__":
     run()

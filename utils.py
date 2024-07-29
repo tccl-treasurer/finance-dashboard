@@ -193,7 +193,7 @@ def XeroFirstAuth(auth_res_url,b64_id_secret,redirect_url):
                             })
     json_response = response.json()
     #st.write(json_response)
-    print(json_response)
+    #print(json_response)
     #print('\n')
     return [json_response['access_token'], json_response['refresh_token']]
 
@@ -264,8 +264,7 @@ def DownloadXeroData(old_refresh_token,b64_id_secret):
                                 'Xero-tenant-id': xero_tenant_id,
                                 'Accept': 'application/json'
                             })
-        out[p] = json.dumps(response.json())
-        st.write(out[p])
+        out[p] = json.dumps(response.json()['BankTransactions'])
         response_length = len(out[p])
         #print(f'Page {p}, length = {response_length}')
         #st.write(f'Page {p}, length = {response_length}')
@@ -274,9 +273,11 @@ def DownloadXeroData(old_refresh_token,b64_id_secret):
             my_bar.progress(5*(p-1), text=progress_text)
         
     my_bar.progress(100, text=progress_text)   
+    #st.write(json.load(out[2]))
     json_response = {}
     for k,v in out.items():
         json_response[k] = pd.read_json(StringIO(v))
+    #st.write(json_response[1])
     json_response = pd.concat(json_response.values()).reset_index(drop=True)
 
     my_bar.empty()
