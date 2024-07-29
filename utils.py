@@ -246,7 +246,7 @@ def DownloadXeroData(old_refresh_token,b64_id_secret):
     xero_tenant_id = XeroTenants(new_tokens[0]) 
 
     out = {}
-    response_length = 1_000
+    response_length = 2_500
     progress_text = "Downloading Transactions from the Xero API"
     response = requests.get("""https://api.xero.com/api.xro/2.0/TrackingCategories""",
                         headers = {
@@ -256,7 +256,7 @@ def DownloadXeroData(old_refresh_token,b64_id_secret):
                         })
     my_bar = st.progress(0, text=progress_text)
     p = 1
-    while response_length >= 2500: 
+    while response_length >= 2_500: 
         get_url = f'https://api.xero.com/api.xro/2.0/BankTransactions?page={p}'
         response = requests.get(get_url,
                             headers = {
