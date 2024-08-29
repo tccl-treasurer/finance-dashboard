@@ -27,6 +27,9 @@ def forecast():
         st.error("No Data Downloaded. Please return to Landing Page tab to Download.")
         st.stop()
 
+    Congregations_f = st.multiselect('Select Congregations:',df['Congregation'].dropna().unique(),default=df['Congregation'].dropna().unique())
+    df = df[df.Congregation.isin(Congregations_f)]
+
     if giftaid:
         df['Total'] = df['SubTotal'] * df['Giftaid_Multiplier']
     else:
@@ -51,6 +54,8 @@ def forecast():
 
     pivot_income = pivot_income.reset_index().set_index(['Name','Monthly Forecast'])
     pivot_income = pivot_income[pivot_income.columns[::-1]].reset_index(level=1) #show months in reverse order
+
+    # if st.button("Resort"):
     pivot_income = pivot_income.sort_values(by='Monthly Forecast',ascending=False)
 
     st.write('**Monthly Income Forecasts**')

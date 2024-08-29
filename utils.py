@@ -192,7 +192,8 @@ def XeroFirstAuth(auth_res_url,b64_id_secret,redirect_url):
                                 'redirect_uri': redirect_url
                             })
     json_response = response.json()
-    #st.write(json_response)
+    if st.button("Print Response"):
+        st.write(json_response)
     #print(json_response)
     #print('\n')
     return [json_response['access_token'], json_response['refresh_token']]
