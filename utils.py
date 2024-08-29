@@ -3,7 +3,6 @@ import textwrap
 import streamlit as st
 import numpy as np
 import pandas as pd
-import streamlit as st
 import math
 from re import sub
 from decimal import Decimal
