@@ -192,11 +192,13 @@ def summary():
         plot_df = plot_df[plot_df['Category']==Category_choice]
 
         plot_df['Category'] = plot_df.AccountCode.map(expense_category2)
-        plot_df = plot_df.groupby(['Time_Group','Category'])['Total'].sum().reset_index()
-        plot_df['Time_Group'] = plot_df['Time_Group'].astype(str)
+        plot_df2 = plot_df.groupby(['Time_Group','Category'])['Total'].sum().reset_index()
+        plot_df2['Time_Group'] = plot_df2['Time_Group'].astype(str)
 
-        fig = px.bar(plot_df,x='Time_Group',y='Total',color='Category',text_auto=',.0f')
+        fig = px.bar(plot_df2,x='Time_Group',y='Total',color='Category',text_auto=',.0f')
         st.plotly_chart(fig,use_container_width=True)
+
+        st.dataframe(plot_df[['Date','Time_Group','Congregation','Name','*Code','*Name','Classification','Category','Total']])
         # utils.altair_bar(plot_df,x='Time_Group',y='Total',color='Category',text=False)
 
     st.subheader('Non-Salary Expenses')
