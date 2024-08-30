@@ -90,96 +90,113 @@ def summary():
 
     df = df[df['Congregation'].isin(Congregations)]
 
-    st.subheader('Income vs Expenses over Time')
+    col1, col2 = st.columns(2)
 
-    plot_df = df.groupby(['Time_Group','Classification'])['Total'].sum().reset_index()
-    plot_df['Time_Group'] = plot_df['Time_Group'].astype(str)
+    with col1:
+        st.subheader('Income vs Expenses over Time',divider='blue')
 
-    fig = px.bar(plot_df,x='Time_Group',y='Total',color='Classification',text_auto=',.0f',barmode='group')
-    st.plotly_chart(fig,use_container_width=True)
-    # utils.altair_bar(plot_df,x='Time_Group',y='Total',color='Classification',
-    #            xOffset='Classification',sort_list=['Income','Expenses'])
-    
-    st.subheader('Number of Givers')
+        plot_df = df.groupby(['Time_Group','Classification'])['Total'].sum().reset_index()
+        plot_df['Time_Group'] = plot_df['Time_Group'].astype(str)
 
-    plot_df = df[df.AccountCode.between(100,235)]
-    plot_df = plot_df[~plot_df.AccountCode.isin([150,199])]
-    plot_df['Source'] = np.where(plot_df['*Name'].str.contains('Internal'),'Internal','External')
-    
-    plot_df = plot_df.groupby(['Time_Group','Source'])['Name'].value_counts().reset_index()
-    plot_df['Giver_Count'] = [2 if '&' in x else 1 for x in plot_df.Name]
-    plot_df = plot_df.groupby(['Time_Group','Source'])['Giver_Count'].sum().reset_index()
-    plot_df['Time_Group'] = plot_df['Time_Group'].astype(str)
+        fig = px.bar(plot_df,x='Time_Group',y='Total',color='Classification',text_auto=',.0f',barmode='group')
+        st.plotly_chart(fig,use_container_width=True)
+        # utils.altair_bar(plot_df,x='Time_Group',y='Total',color='Classification',
+        #            xOffset='Classification',sort_list=['Income','Expenses'])
+        
+    with col2:
+        st.subheader('Number of Givers',divider='blue')
 
-    # utils.altair_bar(plot_df,x='Time_Group',y='Giver_Count',color='Source',stack='zero')
-    fig = px.bar(plot_df,x='Time_Group',y='Giver_Count',color='Source',text_auto=',.0f')
-    st.plotly_chart(fig,use_container_width=True)
+        plot_df = df[df.AccountCode.between(100,235)]
+        plot_df = plot_df[~plot_df.AccountCode.isin([150,199])]
+        plot_df['Source'] = np.where(plot_df['*Name'].str.contains('Internal'),'Internal','External')
+        
+        plot_df = plot_df.groupby(['Time_Group','Source'])['Name'].value_counts().reset_index()
+        plot_df['Giver_Count'] = [2 if '&' in x else 1 for x in plot_df.Name]
+        plot_df = plot_df.groupby(['Time_Group','Source'])['Giver_Count'].sum().reset_index()
+        plot_df['Time_Group'] = plot_df['Time_Group'].astype(str)
 
-    st.subheader('Giving: Regular vs One-Off')
+        # utils.altair_bar(plot_df,x='Time_Group',y='Giver_Count',color='Source',stack='zero')
+        fig = px.bar(plot_df,x='Time_Group',y='Giver_Count',color='Source',text_auto=',.0f')
+        st.plotly_chart(fig,use_container_width=True)
 
-    plot_df = df[df.AccountCode.between(100,235)]
-    plot_df = plot_df[~plot_df.AccountCode.isin([150,199])]
-    plot_df['Frequency'] = np.where(plot_df['*Name'].str.contains('Regular'),'Regular','One-Off')
 
-    plot_df = plot_df.groupby(['Time_Group','Frequency'])['Total'].sum().reset_index()
-    plot_df['Time_Group'] = plot_df['Time_Group'].astype(str)
+    col1, col2 = st.columns(2)
 
-    # utils.altair_bar(plot_df,x='Time_Group',y='Total',color='Frequency',stack='zero',text_stack='zero')
-    fig = px.bar(plot_df,x='Time_Group',y='Total',color='Frequency',text_auto=',.0f')
-    st.plotly_chart(fig,use_container_width=True)
+    with col1:
 
-    st.subheader('Giving: Internal vs External')
+        st.subheader('Giving: Regular vs One-Off',divider='blue')
 
-    plot_df = df[df.AccountCode.between(100,235)]
-    plot_df = plot_df[~plot_df.AccountCode.isin([150,199])]
-    plot_df['Source'] = np.where(plot_df['*Name'].str.contains('Internal'),'Internal','External')
-    plot_df = plot_df.groupby(['Time_Group','Source'])['Total'].sum().reset_index()
-    plot_df['Time_Group'] = plot_df['Time_Group'].astype(str)
+        plot_df = df[df.AccountCode.between(100,235)]
+        plot_df = plot_df[~plot_df.AccountCode.isin([150,199])]
+        plot_df['Frequency'] = np.where(plot_df['*Name'].str.contains('Regular'),'Regular','One-Off')
 
-    fig = px.bar(plot_df,x='Time_Group',y='Total',color='Source',text_auto=',.0f')
-    st.plotly_chart(fig,use_container_width=True)
-    # utils.altair_bar(plot_df,x='Time_Group',y='Total',color='Source')
+        plot_df = plot_df.groupby(['Time_Group','Frequency'])['Total'].sum().reset_index()
+        plot_df['Time_Group'] = plot_df['Time_Group'].astype(str)
 
-    st.subheader('Giving: Donor Distribution')
+        # utils.altair_bar(plot_df,x='Time_Group',y='Total',color='Frequency',stack='zero',text_stack='zero')
+        fig = px.bar(plot_df,x='Time_Group',y='Total',color='Frequency',text_auto=',.0f')
+        st.plotly_chart(fig,use_container_width=True)
 
-    plot_df = df[df.AccountCode.between(100,235)]
-    plot_df = plot_df[~plot_df.AccountCode.isin([150,199])]
-    plot_df = plot_df.groupby(['Time_Group','Name'])['Total'].sum().reset_index()
-    plot_df['Time_Group'] = plot_df['Time_Group'].astype(str)
+    with col2:
 
-    top5d = plot_df.groupby(['Time_Group','Name'])['Total'].sum().sort_values().reset_index()
-    top5d['Giving_rank'] = top5d.groupby('Time_Group')['Total'].rank(pct=True,ascending=False)
-    top5d['Top20_flag'] = np.where(top5d['Giving_rank']<=0.2,'Top20','Other')
+        st.subheader('Giving: Internal vs External',divider='blue')
 
-    #st.dataframe(top5d)
+        plot_df = df[df.AccountCode.between(100,235)]
+        plot_df = plot_df[~plot_df.AccountCode.isin([150,199])]
+        plot_df['Source'] = np.where(plot_df['*Name'].str.contains('Internal'),'Internal','External')
+        plot_df = plot_df.groupby(['Time_Group','Source'])['Total'].sum().reset_index()
+        plot_df['Time_Group'] = plot_df['Time_Group'].astype(str)
 
-    plot_df = plot_df.merge(top5d,how='left',on=['Name','Time_Group'],suffixes=(None,"_y"))
-    plot_df = plot_df.groupby(['Time_Group','Top20_flag'])['Total'].sum().reset_index()
+        fig = px.bar(plot_df,x='Time_Group',y='Total',color='Source',text_auto=',.0f')
+        st.plotly_chart(fig,use_container_width=True)
+        # utils.altair_bar(plot_df,x='Time_Group',y='Total',color='Source')
 
-    # fig = px.bar(plot_df,x='Time_Group',y='Total',color='Top20_flag',text_auto='.0f')
-    # st.plotly_chart(fig,use_container_width=True)
-    utils.altair_bar(plot_df,x='Time_Group',y='Total',color='Top20_flag',stack='normalize',text=False)
+    col1, col2 = st.columns(2)
 
-    st.subheader('Expenses by Category')
+    with col1:
 
-    expense_category1 = utils.expense_category1()
-    expense_category2 = utils.expense_category2()
-    
-    plot_df = df[df.AccountCode>300]
-    plot_df['Category'] = plot_df.AccountCode.map(expense_category1)
-    plot_df['Category'] = np.where(plot_df['Category'].isnull(),'Uncategorised',plot_df['Category'])
-    plot_df = plot_df.groupby(['Time_Group','AccountCode','*Name','Category'])['Total'].sum().reset_index()
-    plot_df['Time_Group'] = plot_df['Time_Group'].astype(str)
+        st.subheader('Giving: Donor Distribution',divider='blue')
 
-    fig = px.bar(plot_df,x='Time_Group',y='Total',color='Category',text_auto=',.0f')
-    st.plotly_chart(fig,use_container_width=True)
-    # utils.altair_bar(plot_df,x='Time_Group',y='Total',color='Category',text=False)
+        plot_df = df[df.AccountCode.between(100,235)]
+        plot_df = plot_df[~plot_df.AccountCode.isin([150,199])]
+        plot_df = plot_df.groupby(['Time_Group','Name'])['Total'].sum().reset_index()
+        plot_df['Time_Group'] = plot_df['Time_Group'].astype(str)
+
+        top5d = plot_df.groupby(['Time_Group','Name'])['Total'].sum().sort_values().reset_index()
+        top5d['Giving_rank'] = top5d.groupby('Time_Group')['Total'].rank(pct=True,ascending=False)
+        top5d['Top20_flag'] = np.where(top5d['Giving_rank']<=0.2,'Top20','Other')
+
+        #st.dataframe(top5d)
+
+        plot_df = plot_df.merge(top5d,how='left',on=['Name','Time_Group'],suffixes=(None,"_y"))
+        plot_df = plot_df.groupby(['Time_Group','Top20_flag'])['Total'].sum().reset_index()
+
+        # fig = px.bar(plot_df,x='Time_Group',y='Total',color='Top20_flag',text_auto='.0f')
+        # st.plotly_chart(fig,use_container_width=True)
+        utils.altair_bar(plot_df,x='Time_Group',y='Total',color='Top20_flag',stack='normalize',text=False)
+
+    with col2:
+            
+        st.subheader('Expenses by Category',divider='blue')
+
+        expense_category1 = utils.expense_category1()
+        expense_category2 = utils.expense_category2()
+        
+        plot_df = df[df.AccountCode>300]
+        plot_df['Category'] = plot_df.AccountCode.map(expense_category1)
+        plot_df['Category'] = np.where(plot_df['Category'].isnull(),'Uncategorised',plot_df['Category'])
+        plot_df = plot_df.groupby(['Time_Group','AccountCode','*Name','Category'])['Total'].sum().reset_index()
+        plot_df['Time_Group'] = plot_df['Time_Group'].astype(str)
+
+        fig = px.bar(plot_df,x='Time_Group',y='Total',color='Category',text_auto=',.0f').update_layout(margin=dict(t=10))
+        st.plotly_chart(fig,use_container_width=True)
+        # utils.altair_bar(plot_df,x='Time_Group',y='Total',color='Category',text=False)
 
     useful_cols = ['Date','Time_Group','Name','Congregation','*Code','*Name','Description','SubTotal','Giftaid_Multiplier','Directional_Total']
     with st.expander('Show Table'):
         st.subheader('Expenses by Group')
         st.dataframe(plot_df.pivot_table(columns='Time_Group',index='Category',values='Total'),
-                     use_container_width=True)
+                    use_container_width=True)
         st.subheader('Top Individual Expenses')
         st.dataframe(df[df['Directional_Total']<-3300][useful_cols].sort_values(by='Directional_Total'),use_container_width=True)
 
