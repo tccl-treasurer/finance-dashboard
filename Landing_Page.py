@@ -14,7 +14,7 @@
 
 import streamlit as st
 from streamlit.logger import get_logger
-import utils
+import utils as utils
 import requests
 import webbrowser
 import base64

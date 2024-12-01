@@ -1,6 +1,6 @@
 import streamlit as st
 from streamlit.logger import get_logger
-import utils
+import utils as utils
 import json
 import requests
 import webbrowser
@@ -11,7 +11,7 @@ import pandas as pd
 import altair as alt
 import os
 from plotly import express as px
-import utils
+import utils as utils
 
 
 def summary():
