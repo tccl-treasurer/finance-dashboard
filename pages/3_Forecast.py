@@ -60,16 +60,19 @@ def forecast():
 
     st.write('**Monthly Income Forecasts**')
 
-    st.dataframe(pivot_income.head())
-    for nm in pivot_income.index[:5]:
-        col1, col2 = st.columns([1,4])
-        # st.write(pivot_income.loc[nm][['Monthly Forecast']].iloc[0])
-        with col1:
-            st.number_input(label=f'{nm}',value=pivot_income[['Monthly Forecast']].loc[nm].iloc[0])
-        with col2:
-            st.dataframe(pd.DataFrame(pivot_income.loc[nm]).T,use_container_width=True)
+    with st.container(height=500):
+        income_forecast_dict = {}
+        for nm in pivot_income.index:
+            col1, col2 = st.columns([1,4])
+            # st.write(pivot_income.loc[nm][['Monthly Forecast']].iloc[0])
+            with col1:
+                income_forecast_dict[f'{nm}'] = st.number_input(label=f'{nm}',value=pivot_income[['Monthly Forecast']].loc[nm].iloc[0])
+            with col2:
+                st.dataframe(pd.DataFrame(pivot_income.loc[nm].iloc[1:]).T,use_container_width=False,hide_index=True)
 
-    edited_income = st.data_editor(pivot_income, num_rows="dynamic")
+    # edited_income = st.data_editor(pivot_income, num_rows="dynamic")
+    st.dataframe(pd.DataFrame.from_dict(income_forecast_dict,orient='index',columns=['Monthly Forecast']))
+    # need to take congregation as a third column
     edited_income[['Monthly Forecast']].to_parquet(file_path)
 
     monthly_income = edited_income['Monthly Forecast'].sum()
