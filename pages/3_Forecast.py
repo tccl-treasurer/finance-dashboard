@@ -60,6 +60,15 @@ def forecast():
 
     st.write('**Monthly Income Forecasts**')
 
+    st.dataframe(pivot_income.head())
+    for nm in pivot_income.index[:5]:
+        col1, col2 = st.columns([1,4])
+        # st.write(pivot_income.loc[nm][['Monthly Forecast']].iloc[0])
+        with col1:
+            st.number_input(label=f'{nm}',value=pivot_income[['Monthly Forecast']].loc[nm].iloc[0])
+        with col2:
+            st.dataframe(pd.DataFrame(pivot_income.loc[nm]).T,use_container_width=True)
+
     edited_income = st.data_editor(pivot_income, num_rows="dynamic")
     edited_income[['Monthly Forecast']].to_parquet(file_path)
 
