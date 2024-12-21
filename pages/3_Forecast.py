@@ -3,11 +3,9 @@ import time
 import numpy as np
 import pandas as pd
 import streamlit as st
-from streamlit.hello.utils import show_code
 import utils as utils
 from datetime import datetime, timedelta
 import time
-import altair as alt
 import os
 import plotly.express as px
 
@@ -17,8 +15,6 @@ def forecast():
 
     st.title("Forecast")
 
-    giftaid = st.toggle('Giftaid',True) 
-
     st.subheader('Income')
 
     try:
@@ -27,7 +23,13 @@ def forecast():
         st.error("No Data Downloaded. Please return to Landing Page tab to Download.")
         st.stop()
 
-    Congregations_f = st.multiselect('Select Congregations:',df['Congregation'].dropna().unique(),default=['International'])
+    col1, col2 = st.columns([1,8])
+    with col1:
+        st.markdown('##### Giftaid')
+        giftaid = st.toggle('Giftaid',True,label_visibility='hidden') 
+    with col2:
+        Congregations_f = st.multiselect('Select Congregations:',df['Congregation'].dropna().unique(),default=['International'])
+    
     df = df[df.Congregation.isin(Congregations_f)]
 
     if giftaid:
@@ -56,8 +58,6 @@ def forecast():
     pivot_income = pivot_income[pivot_income.columns[::-1]].reset_index(level=1) #show months in reverse order
     pivot_income = pivot_income.sort_values(by='Monthly Forecast',ascending=False)
 
-    st.write('**Monthly Income Forecasts**')
-
     all_income_forecasts = {}
     for cong in Congregations_f:
         st.subheader(f'{cong}',divider=True)
@@ -78,7 +78,11 @@ def forecast():
     
     if st.button('Save Income Forecasts'):
         all_income_forecasts.to_parquet(file_path)
-        st.success('Saved')
+        placeholder = st.empty()
+        with placeholder:
+            st.success('Saved')
+            time.sleep(2)
+        placeholder.empty()
 
     monthly_income = all_income_forecasts['Monthly Forecast'].sum()
 
@@ -94,13 +98,15 @@ def forecast():
             time.sleep(0.5)
         check.empty()
         one_off_income_forecast = pd.DataFrame(data={'Name':['Joe Bloggs','Joe Dane']
+                                    ,'Congregation':['International','International']
                                     ,'Date':[mo_ahead_3,mo_ahead_3],'Total':[0.00,0.00]})
 
     one_off_income_forecast_edited = st.data_editor(one_off_income_forecast, num_rows="dynamic")
     one_off_income_forecast_edited.to_parquet('one_off_income_forecast_edited.parquet')
     one_off_income_df = one_off_income_forecast_edited[['Date','Total']].set_index('Date')
 
-    st.subheader('Expenses',divider=True)
+    st.subheader('Expenses ')
+    st.write('__Enter Values as positive__')
 
     expense_forecast = df[df.AccountCode>300]
     expense_forecast = expense_forecast[expense_forecast.AccountCode!=4105] #remove weekend away
@@ -126,8 +132,6 @@ def forecast():
     pivot_expense = pivot_expense.reset_index().set_index(['Category','Congregation','Monthly Forecast'])
     pivot_expense = pivot_expense[pivot_expense.columns[::-1]].reset_index(level=1) #show months in reverse order
     pivot_expense = pivot_expense.sort_values(by='Monthly Forecast',ascending=False)
-
-    st.write('**Monthly Expense Forecasts**: Enter Values as positive')
     
     all_expense_forecasts = {}
     for cong in Congregations_f:
@@ -149,7 +153,11 @@ def forecast():
     
     if st.button('Save Expense Forecasts'):
         all_expense_forecasts.to_parquet(file_path)
-        st.success('Saved')
+        placeholder = st.empty()
+        with placeholder:
+            st.success('Saved')
+            time.sleep(2)
+        placeholder.empty()
 
     monthly_expenses = all_expense_forecasts['Monthly Forecast'].sum()
 

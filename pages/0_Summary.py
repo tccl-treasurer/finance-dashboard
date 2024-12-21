@@ -182,11 +182,11 @@ def summary():
             
         st.subheader('Expenses by Category',divider='blue')
 
-        expense_category1 = utils.expense_category1()
-        expense_category2 = utils.expense_category2()
+        expense_category1 = pd.read_parquet('expense_category_mapping.parquet')
+        expense_category1['Combo'] = expense_category1['AccountCode'].astype(str) + ' - ' + expense_category1['*Name']
         
-        plot_df = df[df.AccountCode>300]
-        plot_df['Category'] = plot_df.AccountCode.map(expense_category1)
+        plot_df = df[df.AccountCode>299]
+        plot_df = pd.merge(plot_df,expense_category1,on=['AccountCode','*Name'],how='left')
         plot_df['Category'] = np.where(plot_df['Category'].isnull(),'Uncategorised',plot_df['Category'])
         plot_df = plot_df.groupby(['Time_Group','AccountCode','*Name','Category'])['Total'].sum().reset_index()
         plot_df['Time_Group'] = plot_df['Time_Group'].astype(str)
@@ -208,26 +208,25 @@ def summary():
     
     if Category_choice is not None:
 
-        plot_df = df[df.AccountCode>300]
-        plot_df['Category'] = plot_df.AccountCode.map(expense_category1)
+        plot_df = df[df.AccountCode>299]
+        plot_df = pd.merge(plot_df,expense_category1,on=['AccountCode','*Name'],how='left')
         plot_df = plot_df[plot_df['Category']==Category_choice]
 
-        plot_df['Category'] = plot_df.AccountCode.map(expense_category2)
-        plot_df2 = plot_df.groupby(['Time_Group','Category'])['Total'].sum().reset_index()
+        plot_df2 = plot_df.groupby(['Time_Group','Combo'])['Total'].sum().reset_index()
         plot_df2['Time_Group'] = plot_df2['Time_Group'].astype(str)
 
-        fig = px.bar(plot_df2,x='Time_Group',y='Total',color='Category',text_auto=',.0f')
+        fig = px.bar(plot_df2,x='Time_Group',y='Total',color='Combo',text_auto=',.0f')
         st.plotly_chart(fig,use_container_width=True)
 
-        st.dataframe(plot_df[['Date','Time_Group','Congregation','Name','*Code','*Name','Classification','Category','Total']])
+        st.dataframe(plot_df[['Date','Time_Group','Congregation','Name','*Code','*Name','Classification','Category','Combo','Total']])
         st.download_button(label="Download",data=plot_df.to_csv().encode("utf-8"),mime="text/csv",key='7')
 
         # utils.altair_bar(plot_df,x='Time_Group',y='Total',color='Category',text=False)
 
     st.subheader('Non-Salary Expenses')
     
-    plot_df = df[df.AccountCode>300]
-    plot_df['Category'] = plot_df.AccountCode.map(expense_category1)
+    plot_df = df[df.AccountCode>299]
+    plot_df = pd.merge(plot_df,expense_category1,on=['AccountCode','*Name'],how='left')
     plot_df = plot_df[plot_df.Category!='Salaries']
     plot_df = plot_df.groupby(['Time_Group','Category'])['Total'].sum().reset_index()
     plot_df['Time_Group'] = plot_df['Time_Group'].astype(str)
@@ -241,7 +240,7 @@ def summary():
     st.subheader('Internal Regular Income vs Core Expenses')
 
     plot_df = df.copy()
-    plot_df['Category'] = plot_df.AccountCode.map(expense_category1)
+    plot_df = pd.merge(plot_df,expense_category1,on=['AccountCode','*Name'],how='left')
     plot_df['Frequency'] = np.where(plot_df['*Name'].str.contains('Regular'),'Regular','One-Off')
     plot_df = plot_df[(plot_df['Frequency']=='Regular') | (plot_df['Classification']=='Expenses')]
     
