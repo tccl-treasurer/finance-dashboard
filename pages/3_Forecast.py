@@ -27,7 +27,7 @@ def forecast():
         st.error("No Data Downloaded. Please return to Landing Page tab to Download.")
         st.stop()
 
-    Congregations_f = st.multiselect('Select Congregations:',df['Congregation'].dropna().unique(),default=df['Congregation'].dropna().unique())
+    Congregations_f = st.multiselect('Select Congregations:',df['Congregation'].dropna().unique(),default=['International'])
     df = df[df.Congregation.isin(Congregations_f)]
 
     if giftaid:
@@ -38,13 +38,13 @@ def forecast():
     #st.dataframe(forecast_df.head())
     income_forecast = df[df.AccountCode.between(100,259)] 
     income_forecast['Time_Group'] = income_forecast.Date.dt.to_period('M')
-    pivot_income = income_forecast.groupby(['Name','Time_Group'])['Total'].sum().reset_index()
-    pivot_income = pivot_income.pivot_table(index='Name',columns='Time_Group',values='Total')
+    pivot_income = income_forecast.groupby(['Name','Congregation','Time_Group'])['Total'].sum().reset_index()
+    pivot_income = pivot_income.pivot_table(index=['Name','Congregation'],columns='Time_Group',values='Total')
 
-    file_path = 'monthly_income_forecast_v2.parquet'
+    file_path = 'monthly_income_forecast.parquet'
     if os.path.exists(file_path):
         mf_df = pd.read_parquet(file_path)
-        pivot_income = pivot_income.join(mf_df)
+        pivot_income = pd.merge(pivot_income.reset_index(),mf_df.reset_index(names='Name'),on=['Name','Congregation'],how='left')
         #add means to missing Names
         pivot_income['Monthly Forecast'] = np.where(pivot_income['Monthly Forecast'].isnull(),
                                                     pivot_income.iloc[:,-12:].fillna(0).mean(axis=1),
@@ -52,38 +52,41 @@ def forecast():
     else:
         pivot_income['Monthly Forecast'] = pivot_income.iloc[:,-12:].fillna(0).mean(axis=1) 
 
-    pivot_income = pivot_income.reset_index().set_index(['Name','Monthly Forecast'])
+    pivot_income = pivot_income.reset_index().set_index(['Name','Congregation','Monthly Forecast'])
     pivot_income = pivot_income[pivot_income.columns[::-1]].reset_index(level=1) #show months in reverse order
-
-    # if st.button("Resort"):
     pivot_income = pivot_income.sort_values(by='Monthly Forecast',ascending=False)
 
     st.write('**Monthly Income Forecasts**')
 
-    with st.container(height=500):
-        income_forecast_dict = {}
-        for nm in pivot_income.index:
-            col1, col2 = st.columns([1,4])
-            # st.write(pivot_income.loc[nm][['Monthly Forecast']].iloc[0])
-            with col1:
-                income_forecast_dict[f'{nm}'] = st.number_input(label=f'{nm}',value=pivot_income[['Monthly Forecast']].loc[nm].iloc[0])
-            with col2:
-                st.dataframe(pd.DataFrame(pivot_income.loc[nm].iloc[1:]).T,use_container_width=False,hide_index=True)
+    all_forecasts = {}
+    for cong in Congregations_f:
+        st.subheader(f'{cong}',divider=True)
+        tmp_income_forecast = pivot_income[pivot_income.Congregation==cong].drop(columns='Congregation').reset_index().set_index('Name')
+        with st.container(height=300):
+            tmp_income_forecast_dict = {}
+            for nm in tmp_income_forecast.index:
+                col1, col2 = st.columns([1,5])
+                # st.write(pivot_income.loc[nm][['Monthly Forecast']].iloc[0])
+                with col1:
+                    tmp_income_forecast_dict[nm] = st.number_input(label=f'{nm} ({cong})',value=tmp_income_forecast[['Monthly Forecast']].loc[nm].iloc[0])
+                with col2:
+                    st.dataframe(pd.DataFrame(tmp_income_forecast.loc[nm].iloc[1:]).T,use_container_width=False,hide_index=True)
+            all_forecasts[cong] =  pd.DataFrame.from_dict(tmp_income_forecast_dict,orient='index',columns=['Monthly Forecast'])          
+            all_forecasts[cong]['Congregation'] = cong
 
-    # edited_income = st.data_editor(pivot_income, num_rows="dynamic")
-    custom_income_forecasts = pd.DataFrame.from_dict(income_forecast_dict,orient='index',columns=['Monthly Forecast'])
-    st.dataframe(custom_income_forecasts)
+    all_forecasts = pd.concat(all_forecasts.values(),axis=0)
+    
+    if st.button('Save Forecasts'):
+        all_forecasts.to_parquet(file_path)
+        st.success('Saved')
 
-    # need to take congregation as a third column
-    custom_income_forecasts.to_parquet(file_path)
-
-    monthly_income = custom_income_forecasts['Monthly Forecast'].sum()
+    monthly_income = all_forecasts['Monthly Forecast'].sum()
 
     st.write('**One-off Income Forecasts**')
 
     mo_ahead_3 = datetime.today() + timedelta(days=90)
     try:
-        one_off_income_forecast = pd.read_parquet('one_off_income_forecast_edited_v2.parquet')
+        one_off_income_forecast = pd.read_parquet('one_off_income_forecast_edited.parquet')
     except:
         check = st.empty()
         with check:
@@ -94,7 +97,7 @@ def forecast():
                                     ,'Date':[mo_ahead_3,mo_ahead_3],'Total':[0.00,0.00]})
 
     one_off_income_forecast_edited = st.data_editor(one_off_income_forecast, num_rows="dynamic")
-    one_off_income_forecast_edited.to_parquet('one_off_income_forecast_edited_v2.parquet')
+    one_off_income_forecast_edited.to_parquet('one_off_income_forecast_edited.parquet')
     one_off_income_df = one_off_income_forecast_edited[['Date','Total']].set_index('Date')
 
     st.subheader('Expenses',divider=True)
