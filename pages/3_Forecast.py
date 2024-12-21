@@ -41,7 +41,7 @@ def forecast():
     pivot_income = income_forecast.groupby(['Name','Time_Group'])['Total'].sum().reset_index()
     pivot_income = pivot_income.pivot_table(index='Name',columns='Time_Group',values='Total')
 
-    file_path = 'monthly_income_forecast.parquet'
+    file_path = 'monthly_income_forecast_v2.parquet'
     if os.path.exists(file_path):
         mf_df = pd.read_parquet(file_path)
         pivot_income = pivot_income.join(mf_df)
@@ -71,17 +71,19 @@ def forecast():
                 st.dataframe(pd.DataFrame(pivot_income.loc[nm].iloc[1:]).T,use_container_width=False,hide_index=True)
 
     # edited_income = st.data_editor(pivot_income, num_rows="dynamic")
-    st.dataframe(pd.DataFrame.from_dict(income_forecast_dict,orient='index',columns=['Monthly Forecast']))
-    # need to take congregation as a third column
-    edited_income[['Monthly Forecast']].to_parquet(file_path)
+    custom_income_forecasts = pd.DataFrame.from_dict(income_forecast_dict,orient='index',columns=['Monthly Forecast'])
+    st.dataframe(custom_income_forecasts)
 
-    monthly_income = edited_income['Monthly Forecast'].sum()
+    # need to take congregation as a third column
+    custom_income_forecasts.to_parquet(file_path)
+
+    monthly_income = custom_income_forecasts['Monthly Forecast'].sum()
 
     st.write('**One-off Income Forecasts**')
 
     mo_ahead_3 = datetime.today() + timedelta(days=90)
     try:
-        one_off_income_forecast = pd.read_parquet('one_off_income_forecast_edited.parquet')
+        one_off_income_forecast = pd.read_parquet('one_off_income_forecast_edited_v2.parquet')
     except:
         check = st.empty()
         with check:
@@ -92,10 +94,10 @@ def forecast():
                                     ,'Date':[mo_ahead_3,mo_ahead_3],'Total':[0.00,0.00]})
 
     one_off_income_forecast_edited = st.data_editor(one_off_income_forecast, num_rows="dynamic")
-    one_off_income_forecast_edited.to_parquet('one_off_income_forecast_edited.parquet')
+    one_off_income_forecast_edited.to_parquet('one_off_income_forecast_edited_v2.parquet')
     one_off_income_df = one_off_income_forecast_edited[['Date','Total']].set_index('Date')
 
-    st.subheader('Expenses')
+    st.subheader('Expenses',divider=True)
 
     expense_forecast = df[df.AccountCode>300]
     expense_forecast = expense_forecast[expense_forecast.AccountCode!=4105] #remove weekend away

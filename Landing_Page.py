@@ -46,8 +46,6 @@ def run():
         5. When it finishes, after 1-2mins, a success message should appear. 
         6. The dashboard is now ready to use. Select one of the pages from the sidebar. 
                        
-    So far, there are 5 pages, which can be accessed using the sidebar on the left.      
-                
                 """,unsafe_allow_html=True)
 
     #st.markdown("<br>", unsafe_allow_html=True)
@@ -129,7 +127,7 @@ def run():
     # else:
     #     st.write("No local data, please push Refresh to download")
     
-    st.write('Code Last Updated 29th July 2024')
+    st.write('Code Last Updated 21st Dec 2024')
 
 if __name__ == "__main__":
     run()
