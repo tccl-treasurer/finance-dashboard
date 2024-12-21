@@ -176,7 +176,7 @@ def forecast():
 
     with col1:
         current_balance = df.Directional_Total.sum()
-        st.metric('Estimated Current Balance',value=current_balance)
+        st.metric('Estimated Current Balance',value=current_balance.round(2))
     with col2:
         balance_override = st.number_input('Override Current Balance',value=None)
 
@@ -205,6 +205,7 @@ def forecast():
     plot_df = pd.concat([monthly_income_df.rename(columns={'Total':'Income'}),-monthly_expense_df.rename(columns={'Total':'Expenses'})],axis=1)
     fig = px.bar(plot_df,x=plot_df.index,y=plot_df.columns,text_auto='.0f',barmode='group')
     st.plotly_chart(fig,use_container_width=True)
+    st.download_button(label="Download",data=plot_df.to_csv().encode("utf-8"),mime="text/csv",key='12')
 
     fig = px.bar(forecast_df,x='Date',y='Balance',text_auto='.0f')
     st.plotly_chart(fig,use_container_width=True)

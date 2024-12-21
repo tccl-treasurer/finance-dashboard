@@ -100,6 +100,7 @@ def summary():
 
         fig = px.bar(plot_df,x='Time_Group',y='Total',color='Classification',text_auto=',.0f',barmode='group')
         st.plotly_chart(fig,use_container_width=True)
+        st.download_button(label="Download",data=plot_df.to_csv().encode("utf-8"),mime="text/csv",key='1')
         # utils.altair_bar(plot_df,x='Time_Group',y='Total',color='Classification',
         #            xOffset='Classification',sort_list=['Income','Expenses'])
         
@@ -118,7 +119,7 @@ def summary():
         # utils.altair_bar(plot_df,x='Time_Group',y='Giver_Count',color='Source',stack='zero')
         fig = px.bar(plot_df,x='Time_Group',y='Giver_Count',color='Source',text_auto=',.0f')
         st.plotly_chart(fig,use_container_width=True)
-
+        st.download_button(label="Download",data=plot_df.to_csv().encode("utf-8"),mime="text/csv",key='2')
 
     col1, col2 = st.columns(2)
 
@@ -136,6 +137,7 @@ def summary():
         # utils.altair_bar(plot_df,x='Time_Group',y='Total',color='Frequency',stack='zero',text_stack='zero')
         fig = px.bar(plot_df,x='Time_Group',y='Total',color='Frequency',text_auto=',.0f')
         st.plotly_chart(fig,use_container_width=True)
+        st.download_button(label="Download",data=plot_df.to_csv().encode("utf-8"),mime="text/csv",key='3')
 
     with col2:
 
@@ -149,8 +151,8 @@ def summary():
 
         fig = px.bar(plot_df,x='Time_Group',y='Total',color='Source',text_auto=',.0f')
         st.plotly_chart(fig,use_container_width=True)
-        # utils.altair_bar(plot_df,x='Time_Group',y='Total',color='Source')
-
+        st.download_button(label="Download",data=plot_df.to_csv().encode("utf-8"),mime="text/csv",key='4')
+        
     col1, col2 = st.columns(2)
 
     with col1:
@@ -174,6 +176,7 @@ def summary():
         # fig = px.bar(plot_df,x='Time_Group',y='Total',color='Top20_flag',text_auto='.0f')
         # st.plotly_chart(fig,use_container_width=True)
         utils.altair_bar(plot_df,x='Time_Group',y='Total',color='Top20_flag',stack='normalize',text=False)
+        st.download_button(label="Download",data=plot_df.to_csv().encode("utf-8"),mime="text/csv",key='5')
 
     with col2:
             
@@ -190,6 +193,7 @@ def summary():
 
         fig = px.bar(plot_df,x='Time_Group',y='Total',color='Category',text_auto=',.0f').update_layout(margin=dict(t=10))
         st.plotly_chart(fig,use_container_width=True)
+        st.download_button(label="Download",data=plot_df.to_csv().encode("utf-8"),mime="text/csv",key='6')
         # utils.altair_bar(plot_df,x='Time_Group',y='Total',color='Category',text=False)
 
     useful_cols = ['Date','Time_Group','Name','Congregation','*Code','*Name','Description','SubTotal','Giftaid_Multiplier','Directional_Total']
@@ -216,6 +220,8 @@ def summary():
         st.plotly_chart(fig,use_container_width=True)
 
         st.dataframe(plot_df[['Date','Time_Group','Congregation','Name','*Code','*Name','Classification','Category','Total']])
+        st.download_button(label="Download",data=plot_df.to_csv().encode("utf-8"),mime="text/csv",key='7')
+
         # utils.altair_bar(plot_df,x='Time_Group',y='Total',color='Category',text=False)
 
     st.subheader('Non-Salary Expenses')
@@ -228,6 +234,7 @@ def summary():
     
     fig = px.bar(plot_df,x='Time_Group',y='Total',color='Category',text_auto=',.0f')
     st.plotly_chart(fig,use_container_width=True)
+    st.download_button(label="Download",data=plot_df.to_csv().encode("utf-8"),mime="text/csv",key='8')
 
     st.markdown('# ')
 
@@ -243,6 +250,7 @@ def summary():
 
     utils.altair_bar(plot_df,x='Time_Group',y='Total',color='Classification',
                xOffset='Classification',sort_list=['Income','Expenses'])
+    st.download_button(label="Download",data=plot_df.to_csv().encode("utf-8"),mime="text/csv",key='9')
 
     st.subheader('Reserves over Time')
 
@@ -254,19 +262,10 @@ def summary():
 
     fig = px.bar(plot_df,x='Time_Group',y='Running_Total',text_auto=',.0f')
     st.plotly_chart(fig,use_container_width=True)
+    st.download_button(label="Download",data=plot_df.to_csv().encode("utf-8"),mime="text/csv",key='10')
 
     if st.button('Show All Data'):
         st.dataframe(df[useful_cols].sort_values(by='Date'))
-
-    # st.title('Custom Queries')
-
-    # with st.form("sql_form"):
-    #     input_sql = st.text_input('Enter Query',help="""SELECT sum(Directional_Total), Name from read_parquet('xero_data.parquet') where AccountCode<300 group by Name""")
-    #     submitted = st.form_submit_button('Calculate')
-
-    # if submitted:
-    #     custom_df = duckdb.sql(input_sql).df()
-    #     st.dataframe(custom_df,use_container_width=True)
     
 if __name__ == "__main__":
     summary()
