@@ -59,20 +59,20 @@ def run():
     auth_url = ('''https://login.xero.com/identity/connect/authorize?response_type=code''' +
             '''&client_id=''' + client_id + '''&redirect_uri=''' + redirect_url +
             '''&scope=''' + scope + '''&state=123''')
-    st.markdown(f"""Open the following <a href="{auth_url}">__link__</a> to download data.""",unsafe_allow_html=True)
+    
+    if st.checkbox('Update Chart Of Accounts'):
+        coa = st.file_uploader('Upload CSV Exported from Chart of Accounts')
+        if coa is not None:
+            pd.read_csv(coa).to_csv('ChartOfAccounts.csv',index=False)
+            utils.success_popup('Chart Of Accounts Updated')
 
+    st.markdown(f"""Open the following <a href="{auth_url}">__link__</a> to download data.""",unsafe_allow_html=True)
+    
     auth_res_url = st.text_input('Enter the response URL:',None)
        
     if auth_res_url is not None:
 
-        # if st.checkbox('Authorize and Download'):
-        #webbrowser.open_new(auth_url)
-        if len(auth_res_url)==0:
-            st.stop()
-
         old_tokens = utils.XeroFirstAuth(auth_res_url,b64_id_secret,redirect_url)
-        #old_refresh_token = utils.XeroRefreshToken(old_tokens[1])
-        #with st.status("Downloading Transactions from the Xero API"):
         json_df = utils.DownloadXeroData(old_tokens[1],b64_id_secret)
         success_containter = st.empty()
         with success_containter:
@@ -106,6 +106,7 @@ def run():
         df['Name'] = df['Contact'].apply(lambda x: x['Name'])
         df['Date'] = pd.to_datetime(df['DateString'])
         df['AccountCode'] = df['LineItems'].apply(lambda x: x[0]['AccountCode'])
+        st.dataframe(df.head())
         df = pd.merge(df,mapping,left_on=['AccountCode'],right_on=['*Code'])
         df['AccountCode'] = pd.to_numeric(df['AccountCode'],errors='raise')
         df['Year'] = df.Date.dt.year
@@ -121,11 +122,6 @@ def run():
         df['Classification_sign'] = np.where(s<300,1,-1)
         df['Directional_Total'] = df['Total'] * df['Classification_sign']
         st.session_state['xero_data'] = df
-
-    # if os.path.exists('xero_data.parquet'):    
-    #     st.session_state['xero_data'] = pd.read_parquet('xero_data.parquet')
-    # else:
-    #     st.write("No local data, please push Refresh to download")
     
     st.write('Code Last Updated 21st Dec 2024')
 

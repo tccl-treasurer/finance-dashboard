@@ -1,3 +1,4 @@
+#%%
 import inspect
 import textwrap
 import streamlit as st
@@ -13,77 +14,8 @@ import json
 import base64
 from io import StringIO
 import altair as alt
-
-def expense_category1():
-    return {
-    320:'Salaries',
-    470:'Salaries',
-    477:'Salaries',
-    479:'Salaries',
-    482:'Salaries',
-    418:'Donations to Churches',
-    4115:'Equipment, Books & Fliers',
-    4108:'Kids & Youth Work',
-    4114:'Events/Hospitality',
-    482:'Salaries',
-    4105:'Events',
-    4116:'Hardship Fund',
-    4106:'Kids & Youth Work',
-    401:'Admin',
-    4101:'Equipment, Books & Fliers',
-    4112:'Equipment, Books & Fliers',
-    4113:'Ministry Training',
-    4118:'Venue Hire',
-    4103:'Events/Hospitality',
-    4120:'Events/Hospitality',
-    4111:'Staff Expenses',
-    494:'Staff Expenses',
-    429:'General',
-    4119:'Equipment, Books & Fliers',
-    4109:'Ministry Training',
-    4117:'Equipment, Books & Fliers',
-    720:'Equipment, Books & Fliers',
-    4102:'Events',
-    425:'Admin',
-    4104:'Events',
-    430:'Admin',
-    433:'Admin',
-    441:'Admin',
-    404:'Admin',
-    463:'Equipment, Books & Fliers',
-    493:'Travel - National'
-}
-
-def expense_category2():
-    return {
-    320:'Salaries',
-    479:'Salaries',
-    418:'Donations to Other Churches',
-    4115:'Church Equipment',
-    4108:'Kids & Youth Work',
-    4114:'Food',
-    482:'Salaries',
-    4105:'Weekend Away',
-    4116:'Hardship Fund',
-    4106:'Kids & Youth Work',
-    401:'Accounting/Finance',
-    4101:'Books',
-    4112:'Music',
-    4113:'Ministry Training',
-    4103:'Events',
-    4111:'Other Staff Expenses',
-    429:'General',
-    4119:'Venue costs',
-    4109:'Ministry Training',
-    4117:'Fliers & Advertising',
-    720:'Church Equipment',
-    4102:'Events',
-    425:'Admin',
-    4104:'Events',
-    430:'Admin',
-    433:'Insurance',
-    463:'Tech'
-}
+from requests_oauthlib import OAuth2Session
+from oauthlib.oauth2 import BackendApplicationClient
 
 #%%
 
@@ -108,39 +40,6 @@ def year_definition(df, option=None):
     else:
         return df
 
-# def download_xero(df,income_flag):
-#     #download from google sheet tab
-#     xero = download_gsheet_values("Xero","A:H")
-#     xero['Date'] = pd.to_datetime(xero['Date'],format="%d %b %Y")
-
-#     if income_flag:
-#         #code
-#         return xero
-
-#     else:
-
-#         category_dict = {
-#             430:'Expenses',
-#             433:'Expenses',
-#             401:'Expenses',
-#             463:'Expenses',
-#             4105:'Expenses',
-#             4110:'Expenses',
-#             4112:'Expenses',
-#             4114:'Expenses',
-#             480:'Expenses',
-#             4102:'Expenses',
-#             470:'Housing',
-#             4106:'Expenses',
-#             4120:'Expenses',
-#             4105:'Weekend Away',
-#             858:'Salaries',
-#             4111:'Expenses',
-#             477:'Salaries',
-#             493:'Expenses'
-#         }
-#         return xero
-
 def report_table(report_df,sign):
 
     df = report_df[report_df.Classification_sign==sign].groupby(
@@ -164,7 +63,6 @@ def report_table(report_df,sign):
 
 def convert_df(df):
    return df.to_csv(index=False).encode('utf-8')
-
 
 def XeroFirstAuth(auth_res_url,b64_id_secret,redirect_url):
     
@@ -210,6 +108,7 @@ def XeroTenants(access_token):
     #print(json_response)
     
     for tenants in json_response:
+        # st.write(tenants)
         json_dict = tenants
     return json_dict['tenantId']
 
@@ -226,9 +125,9 @@ def XeroRefreshToken(refresh_token,b64_id_secret):
                                 'refresh_token' : refresh_token
                             })
     json_response = response.json()
-    #print(json_response)
+    #st.write(json_response)
     
-    new_refresh_token = json_response['refresh_token']
+    #new_refresh_token = json_response['refresh_token']
     #rt_file = open('refresh_token.txt', 'w')
     #rt_file.write(new_refresh_token)
     #rt_file.close()
@@ -248,12 +147,6 @@ def DownloadXeroData(old_refresh_token,b64_id_secret):
     out = {}
     response_length = 2_500
     progress_text = "Downloading Transactions from the Xero API"
-    response = requests.get("""https://api.xero.com/api.xro/2.0/TrackingCategories""",
-                        headers = {
-                            'Authorization': 'Bearer ' + new_tokens[0],
-                            'Xero-tenant-id': xero_tenant_id,
-                            'Accept': 'application/json'
-                        })
     my_bar = st.progress(0, text=progress_text)
     p = 1
     while response_length >= 2_500: 
@@ -317,3 +210,14 @@ def altair_bar(plot_df,x,y,color,xOffset=None,stack='zero',text=True,sort_list=N
     
         st.markdown('# ')
         st.altair_chart(fig,use_container_width=True)
+
+#%%
+
+def success_popup(text):
+    placeholder = st.empty()
+    with placeholder:
+        st.success(text)
+        time.sleep(2)
+    placeholder.empty()
+
+#%%

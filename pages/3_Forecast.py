@@ -108,10 +108,11 @@ def forecast():
     st.subheader('Expenses ')
     st.write('__Enter Values as positive__')
 
-    expense_forecast = df[df.AccountCode>300]
+    expense_forecast = df[df.AccountCode>299]
     expense_forecast = expense_forecast[expense_forecast.AccountCode!=4105] #remove weekend away
-    expense_category1 = utils.expense_category1()
-    expense_forecast['Category'] = expense_forecast.AccountCode.map(expense_category1)
+    mapping = pd.read_parquet('expense_category_mapping.parquet')
+    expense_forecast = pd.merge(expense_forecast,mapping,on=['AccountCode','*Name'],how='left')
+    
     expense_forecast['Time_Group'] = expense_forecast.Date.dt.to_period('M')
     expense_forecast = expense_forecast.groupby(['Time_Group','Category','Congregation'])['Total'].sum().reset_index()
     pivot_expense = expense_forecast.groupby(['Category','Congregation','Time_Group'])['Total'].sum().reset_index() 

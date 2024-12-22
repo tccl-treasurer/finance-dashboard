@@ -22,8 +22,6 @@ def categories():
             ].groupby(['AccountCode','*Name'])['SubTotal'].count().reset_index(
             ).sort_values(by='AccountCode').rename(columns={'SubTotal':'Count'})
 
-    # mapping = utils.expense_category1()
-    # mapping = pd.DataFrame.from_dict(mapping,orient='index',columns=['Category']).reset_index(names='AccountCode')
     mapping = pd.read_parquet('expense_category_mapping.parquet')
 
     df = pd.merge(df,mapping,on=['AccountCode','*Name'],how='left')
