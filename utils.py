@@ -14,8 +14,6 @@ import json
 import base64
 from io import StringIO
 import altair as alt
-from requests_oauthlib import OAuth2Session
-from oauthlib.oauth2 import BackendApplicationClient
 
 #%%
 
