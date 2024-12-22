@@ -37,14 +37,16 @@ def categories():
         category_name = st.text_input('Choose Category Name')
     with col2:
         #concat for improved ui
-        code_options = df['AccountCode'].astype(str) + ' - ' + df['*Name']
-        codes = st.multiselect('Choose Corresponding Account Codes',options=code_options.tolist())
+        code_options = '(' + df['AccountCode'].astype(str) + ') ' + df['*Name']
+        code_options = code_options.unique()
+        codes = st.multiselect('Choose Corresponding Account Codes',options=code_options)
 
     #save button
     if st.button('Save Category Mapping'):
  
         new_mapping = pd.DataFrame(data={'Choices':codes,'Category2':[category_name]*len(codes)})
-        new_mapping[['AccountCode','*Name']] = new_mapping['Choices'].str.split(' - ',expand=True)
+        new_mapping[['AccountCode','*Name']] = new_mapping['Choices'].str.split("\) ",expand=True)
+        new_mapping['AccountCode'] = new_mapping['AccountCode'].str.replace('(','')
         new_mapping['AccountCode'] = new_mapping['AccountCode'].astype('int64')
         new_mapping['*Name'] = new_mapping['*Name'].astype(str)
         new_mapping = new_mapping[['AccountCode','*Name','Category2']]
