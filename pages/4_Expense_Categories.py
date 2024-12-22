@@ -57,6 +57,7 @@ def categories():
             st.success('Mapping Saved')
             time.sleep(2)
         placeholder.empty()
+        st.rerun()
 
 categories()
 
